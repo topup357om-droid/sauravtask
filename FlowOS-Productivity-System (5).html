@@ -1,0 +1,3800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowOS — Productivity System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ======================== RESET & VARIABLES ======================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base: #0a0a0f;
+  --bg-surface: #111118;
+  --bg-card: #16161f;
+  --bg-hover: #1c1c28;
+  --bg-input: #1a1a24;
+  --border: #252535;
+  --border-bright: #353550;
+  --accent: #7c6af7;
+  --accent-2: #f7a66a;
+  --accent-3: #6af7c4;
+  --accent-4: #f76a8a;
+  --accent-dim: rgba(124,106,247,0.15);
+  --accent-2-dim: rgba(247,166,106,0.15);
+  --accent-3-dim: rgba(106,247,196,0.15);
+  --accent-4-dim: rgba(247,106,138,0.15);
+  --text-primary: #e8e8f0;
+  --text-secondary: #8888aa;
+  --text-dim: #55556a;
+  --high: #f76a8a;
+  --medium: #f7a66a;
+  --low: #6af7c4;
+  --success: #6af7c4;
+  --warning: #f7e06a;
+  --danger: #f76a8a;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
+  --transition: 0.18s cubic-bezier(0.4,0,0.2,1);
+  --sidebar-w: 220px;
+}
+
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+}
+
+/* ======================== SCROLLBAR ======================== */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ======================== SIDEBAR ======================== */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 12px;
+  gap: 4px;
+  overflow-y: auto;
+  z-index: 100;
+  transition: transform var(--transition);
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  padding: 8px 10px 20px;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-dot { 
+  width: 8px; height: 8px; border-radius: 50%; 
+  background: var(--accent); 
+  box-shadow: 0 0 12px var(--accent);
+}
+
+.nav-section {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 12px 10px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: all var(--transition);
+  user-select: none;
+}
+.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nav-item.active { background: var(--accent-dim); color: var(--accent); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  padding: 1px 6px;
+  border-radius: 20px;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ======================== MAIN CONTENT ======================== */
+#main {
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#topbar {
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+}
+
+#page-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+#topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+#content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ======================== PAGE VIEWS ======================== */
+.page { display: none; }
+.page.active { display: flex; flex-direction: column; gap: 20px; }
+
+/* ======================== BUTTONS ======================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #8d7ef8; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,106,247,0.4); }
+.btn-secondary { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg-hover); color: var(--text-primary); }
+.btn-danger { background: var(--accent-4-dim); color: var(--danger); border: 1px solid var(--accent-4); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 7px; width: 34px; height: 34px; justify-content: center; }
+
+/* ======================== CARDS ======================== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+.card-subtitle { font-size: 12px; color: var(--text-secondary); }
+
+/* ======================== STATS GRID ======================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition);
+}
+.stat-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.stat-card.accent::before { background: var(--accent); }
+.stat-card.accent-2::before { background: var(--accent-2); }
+.stat-card.accent-3::before { background: var(--accent-3); }
+.stat-card.accent-4::before { background: var(--accent-4); }
+.stat-label { font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; }
+.stat-value { font-family: var(--font-display); font-size: 32px; font-weight: 800; line-height: 1.1; margin: 6px 0 4px; letter-spacing: -1px; }
+.stat-sub { font-size: 11px; color: var(--text-dim); }
+.stat-card.accent .stat-value { color: var(--accent); }
+.stat-card.accent-2 .stat-value { color: var(--accent-2); }
+.stat-card.accent-3 .stat-value { color: var(--accent-3); }
+.stat-card.accent-4 .stat-value { color: var(--accent-4); }
+
+/* ======================== FORMS ======================== */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 12px; font-family: var(--font-mono); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; }
+input, textarea, select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 9px 12px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  transition: border-color var(--transition);
+  width: 100%;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+textarea { resize: vertical; min-height: 80px; }
+select option { background: var(--bg-card); }
+
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+
+/* ======================== MODAL ======================== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease;
+}
+.modal-overlay.open { display: flex; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+  animation: slideUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow-lg);
+}
+.modal-lg { max-width: 720px; }
+@keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.modal-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.modal-close { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 20px; padding: 4px; transition: color var(--transition); }
+.modal-close:hover { color: var(--text-primary); }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.modal-body { display: flex; flex-direction: column; gap: 16px; }
+
+/* ======================== PROGRESS BAR ======================== */
+.progress-bar {
+  height: 4px; background: var(--bg-hover); border-radius: 4px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 4px;
+  background: var(--accent);
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.progress-fill.orange { background: var(--accent-2); }
+.progress-fill.green { background: var(--accent-3); }
+.progress-fill.red { background: var(--accent-4); }
+
+/* ======================== TASK LIST ======================== */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+.task-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: all var(--transition);
+  cursor: pointer;
+  position: relative;
+}
+.task-item:hover { border-color: var(--border-bright); background: var(--bg-hover); }
+.task-item.completed { opacity: 0.6; }
+.task-item.completed .task-title { text-decoration: line-through; color: var(--text-dim); }
+
+.task-check {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--border-bright);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition);
+  margin-top: 2px;
+  cursor: pointer;
+}
+.task-check.checked { background: var(--accent); border-color: var(--accent); }
+.task-check.checked::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
+
+.task-content { flex: 1; min-width: 0; }
+.task-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+.task-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tag-high { background: var(--accent-4-dim); color: var(--high); }
+.tag-medium { background: var(--accent-2-dim); color: var(--medium); }
+.tag-low { background: var(--accent-3-dim); color: var(--low); }
+.tag-cat { background: var(--accent-dim); color: var(--accent); }
+.tag-date { background: var(--bg-hover); color: var(--text-dim); }
+
+.task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity var(--transition); }
+.task-item:hover .task-actions { opacity: 1; }
+.task-action-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-dim); font-size: 14px;
+  padding: 4px 6px; border-radius: 4px;
+  transition: all var(--transition);
+}
+.task-action-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.task-timer { font-family: var(--font-mono); font-size: 11px; color: var(--accent-3); }
+.timer-running { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+/* ======================== HABITS ======================== */
+.habit-grid { display: flex; flex-direction: column; gap: 10px; }
+.habit-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all var(--transition);
+}
+.habit-item:hover { border-color: var(--border-bright); }
+.habit-name { font-size: 14px; font-weight: 500; flex: 1; }
+.habit-streak { font-family: var(--font-mono); font-size: 12px; color: var(--accent-2); white-space: nowrap; }
+.habit-days { display: flex; gap: 4px; }
+.habit-day {
+  width: 26px; height: 26px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-family: var(--font-mono);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+}
+.habit-day.done { background: var(--accent-3-dim); border-color: var(--accent-3); color: var(--accent-3); }
+.habit-day.today { border-color: var(--accent); }
+.habit-check-today {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border-bright);
+  background: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+.habit-check-today.done { background: var(--accent-3); border-color: var(--accent-3); }
+.habit-bar { flex: 1; }
+
+/* ======================== CONTENT PIPELINE ======================== */
+.pipeline-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.content-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all var(--transition);
+}
+.content-card:hover { border-color: var(--border-bright); transform: translateY(-2px); box-shadow: var(--shadow); }
+.content-title { font-weight: 600; font-size: 14px; color: var(--text-primary); line-height: 1.3; }
+.content-category {
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 20px;
+  background: var(--accent-dim); color: var(--accent);
+  display: inline-block; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.stage-list { display: flex; flex-direction: column; gap: 5px; }
+.stage-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.stage-check {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border-bright);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.stage-check.done { background: var(--accent-3); border-color: var(--accent-3); }
+.stage-check.done::after { content: '✓'; color: #fff; font-size: 9px; font-weight: 700; }
+.content-progress-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-dim); }
+
+/* ======================== HISTORY / TIMELINE ======================== */
+.timeline { display: flex; flex-direction: column; gap: 12px; }
+.timeline-item {
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.timeline-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0; margin-top: 6px;
+}
+.timeline-dot.task { background: var(--accent); }
+.timeline-dot.habit { background: var(--accent-3); }
+.timeline-dot.content { background: var(--accent-2); }
+.timeline-content { flex: 1; }
+.timeline-text { font-size: 13px; color: var(--text-primary); }
+.timeline-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+
+/* ======================== SEARCH / FILTERS ======================== */
+.filter-bar {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.search-input {
+  flex: 1; min-width: 200px;
+  padding: 8px 12px 8px 36px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  position: relative;
+}
+.search-wrap { position: relative; flex: 1; min-width: 200px; }
+.search-wrap::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; pointer-events: none; }
+.search-wrap input { padding-left: 32px; }
+
+/* ======================== GOALS ======================== */
+.goal-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  transition: all var(--transition);
+}
+.goal-item:hover { border-color: var(--border-bright); }
+.goal-header { display: flex; align-items: center; justify-content: space-between; }
+.goal-name { font-weight: 600; font-size: 14px; }
+.goal-pct { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
+
+/* ======================== INSIGHT CARDS ======================== */
+.insight-list { display: flex; flex-direction: column; gap: 8px; }
+.insight-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 14px;
+  font-size: 13px; color: var(--text-secondary);
+}
+.insight-item.warn { border-left-color: var(--accent-2); }
+.insight-item.good { border-left-color: var(--accent-3); }
+
+/* ======================== CATEGORY DOTS ======================== */
+.cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ======================== SUBTASKS ======================== */
+.subtask-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding-left: 30px; }
+.subtask-item { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--text-secondary); }
+.subtask-check {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 1.5px solid var(--border-bright); flex-shrink: 0;
+  cursor: pointer; transition: all var(--transition);
+  display: flex; align-items: center; justify-content: center;
+}
+.subtask-check.done { background: var(--accent); border-color: var(--accent); }
+.subtask-check.done::after { content: '✓'; color: #fff; font-size: 9px; }
+
+/* ======================== MOBILE TOGGLE ======================== */
+#menu-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+
+/* ======================== TABS ======================== */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+.tab {
+  padding: 8px 16px; cursor: pointer;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all var(--transition);
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ======================== CHART CONTAINER ======================== */
+.chart-container { position: relative; height: 200px; }
+.chart-container-lg { height: 260px; }
+
+/* ======================== GRID LAYOUTS ======================== */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+
+/* ======================== CATEGORY MANAGEMENT ======================== */
+.category-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px; font-size: 12px; font-weight: 500;
+  background: var(--bg-card); border: 1px solid var(--border);
+  cursor: pointer; transition: all var(--transition);
+}
+.category-chip:hover { border-color: var(--border-bright); }
+
+/* ======================== EMPTY STATE ======================== */
+.empty-state {
+  text-align: center; padding: 48px 24px;
+  color: var(--text-dim);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; margin-bottom: 16px; }
+
+/* ======================== DRAG HANDLE ======================== */
+.drag-handle { cursor: grab; color: var(--text-dim); font-size: 12px; padding: 0 4px; }
+.drag-handle:active { cursor: grabbing; }
+
+/* ======================== TOGGLE SWITCH ======================== */
+.toggle-wrap { display: flex; align-items: center; gap: 10px; }
+.toggle {
+  position: relative; width: 40px; height: 22px;
+  background: var(--bg-hover); border-radius: 20px;
+  cursor: pointer; transition: background var(--transition);
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; top: 3px; left: 3px;
+  transition: transform var(--transition);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle.on::after { transform: translateX(18px); }
+
+/* ======================== RESPONSIVE ======================== */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 260px; }
+  #sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+  #menu-toggle { display: block; }
+  #content-area { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .pipeline-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .habit-days { display: none; }
+}
+
+/* ======================== ANIMATIONS ======================== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.anim-in { animation: fadeInUp 0.25s ease forwards; }
+
+/* Color accent options for categories */
+.color-opt {
+  width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: border-color var(--transition);
+}
+.color-opt.selected { border-color: #fff; }
+
+/* Notification toast */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--bg-card); border: 1px solid var(--border-bright);
+  padding: 12px 20px; border-radius: var(--radius); font-size: 13px;
+  box-shadow: var(--shadow-lg); z-index: 9999;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none; white-space: nowrap;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Sidebar overlay for mobile */
+#sidebar-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 99;
+}
+#sidebar-overlay.open { display: block; }
+
+/* Timer display */
+.big-timer {
+  font-family: var(--font-mono); font-size: 48px; font-weight: 300;
+  color: var(--accent); letter-spacing: 4px; text-align: center;
+  padding: 20px 0;
+}
+
+/* Week heatmap */
+.heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  transition: all var(--transition);
+  cursor: default;
+  position: relative;
+}
+.heatmap-cell[data-level="1"] { background: rgba(124,106,247,0.2); }
+.heatmap-cell[data-level="2"] { background: rgba(124,106,247,0.4); }
+.heatmap-cell[data-level="3"] { background: rgba(124,106,247,0.6); }
+.heatmap-cell[data-level="4"] { background: rgba(124,106,247,0.85); }
+
+/* Data export strip */
+.data-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ======================== PASSCODE ======================== */
+.passcode-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(6px);
+  z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+}
+.passcode-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  width: 320px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+.passcode-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.passcode-hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; }
+.passcode-dots { display: flex; gap: 12px; justify-content: center; margin-bottom: 8px; }
+.passcode-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border-bright); transition: all 0.15s; }
+.passcode-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.passcode-error { font-size: 12px; color: var(--danger); min-height: 18px; margin-bottom: 14px; }
+.numpad { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.numpad-btn {
+  background: var(--bg-hover); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 20px; font-family: var(--font-mono);
+  padding: 14px 0; cursor: pointer;
+  transition: all var(--transition);
+}
+.numpad-btn:hover { background: var(--border-bright); border-color: var(--accent); }
+.numpad-btn:active { transform: scale(0.93); }
+.numpad-btn.del { font-size: 15px; color: var(--text-secondary); }
+.passcode-cancel { margin-top: 14px; background: none; border: none; color: var(--text-dim); font-size: 12px; cursor: pointer; }
+.passcode-cancel:hover { color: var(--text-secondary); }
+
+/* ======================== STAGE NOTE BTN ======================== */
+.stage-note-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; color: var(--text-dim);
+  padding: 1px 5px; border-radius: 4px;
+  transition: all var(--transition); margin-left: auto; flex-shrink: 0;
+}
+.stage-note-btn:hover { color: var(--accent-2); background: var(--accent-2-dim); }
+.stage-note-btn.has-note { color: var(--accent-2); }
+.stage-note-preview {
+  font-size: 11px; color: var(--text-dim); font-style: italic;
+  padding: 3px 8px 3px 26px; margin-top: 2px;
+  border-left: 2px solid var(--border-bright);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ======================== INLINE CAT ADD ======================== */
+.inline-cat-row {
+  display: flex; gap: 6px; margin-top: 6px;
+}
+.inline-cat-row input {
+  font-size: 12px; padding: 5px 8px;
+  border-radius: var(--radius-sm);
+}
+.inline-cat-row button {
+  padding: 5px 10px; font-size: 11px; white-space: nowrap; flex-shrink: 0;
+}
+
+/* Settings page */
+.settings-section {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; max-width: 480px;
+}
+.settings-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+
+/* ======================== LIVE CLOCK ======================== */
+#sidebar-clock {
+  padding: 0 10px 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+#sidebar-clock .clock-time {
+  font-family: var(--font-mono);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+#sidebar-clock .clock-date {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  font-family: var(--font-body);
+}
+#sidebar-clock .clock-tz {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 1px;
+}
+
+/* ======================== DATE RANGE FILTER ======================== */
+.date-range-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+.date-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  user-select: none;
+}
+.date-pill:hover { border-color: var(--accent); color: var(--accent); }
+.date-pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.date-pill.custom-active { background: var(--accent-2-dim); border-color: var(--accent-2); color: var(--accent-2); }
+.date-range-custom {
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+}
+.date-range-custom input[type="date"] {
+  font-size: 12px; padding: 4px 8px; width: auto;
+  border-radius: var(--radius-sm);
+}
+.date-range-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.date-range-separator { color: var(--text-dim); font-size: 11px; }
+.date-range-result {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar Overlay (mobile) -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div class="logo"><div class="logo-dot"></div>FlowOS</div>
+
+  <!-- Live IST Clock -->
+  <div id="sidebar-clock">
+    <div class="clock-time" id="clock-time">00:00:00</div>
+    <div class="clock-date" id="clock-date">Loading...</div>
+    <div class="clock-tz">IST · India/Kolkata</div>
+  </div>
+
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active" onclick="showPage('dashboard')">
+    <span class="icon">⚡</span> Dashboard
+  </div>
+  
+  <div class="nav-section">Modules</div>
+  <div class="nav-item" onclick="showPage('tasks')">
+    <span class="icon">✓</span> Tasks
+    <span class="nav-badge" id="badge-tasks">0</span>
+  </div>
+  <div class="nav-item" onclick="showPage('habits')">
+    <span class="icon">🔁</span> Habits
+  </div>
+  <div class="nav-item" onclick="showPage('content')">
+    <span class="icon">🎥</span> Content
+  </div>
+  <div class="nav-item" onclick="showPage('goals')">
+    <span class="icon">🎯</span> Goals
+  </div>
+  <div class="nav-item" onclick="showPage('timetracking')">
+    <span class="icon">⏱</span> Time Tracking
+  </div>
+  
+  <div class="nav-section">System</div>
+  <div class="nav-item" onclick="showPage('history')">
+    <span class="icon">📜</span> History
+  </div>
+  <div class="nav-item" onclick="showPage('categories')">
+    <span class="icon">🗂</span> Categories
+  </div>
+  <div class="nav-item" onclick="showPage('insights')">
+    <span class="icon">💡</span> Insights
+  </div>
+  <div class="nav-item" onclick="showPage('data')">
+    <span class="icon">💾</span> Data
+  </div>
+  <div class="nav-item" onclick="showPage('settings')">
+    <span class="icon">⚙️</span> Settings
+  </div>
+</nav>
+
+<!-- Main -->
+<div id="main">
+  <!-- Topbar -->
+  <div id="topbar">
+    <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+    <div id="page-title">Dashboard</div>
+    <div id="topbar-actions">
+      <button class="btn btn-primary" id="quick-add-btn" onclick="quickAdd()">+ Quick Add</button>
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div id="content-area">
+
+    <!-- ===================== DASHBOARD PAGE ===================== -->
+    <div id="page-dashboard" class="page active">
+      <!-- Date Range Filter for Dashboard Stats -->
+      <div class="date-range-bar" id="dash-date-bar">
+        <span class="date-range-label">📅 Stats Period:</span>
+        <div class="date-pill active" onclick="setDateFilter('dashboard','all',this)">All Time</div>
+        <div class="date-pill" onclick="setDateFilter('dashboard','today',this)">Today</div>
+        <div class="date-pill" onclick="setDateFilter('dashboard','yesterday',this)">Yesterday</div>
+        <div class="date-pill" onclick="setDateFilter('dashboard','week',this)">This Week</div>
+        <div class="date-pill" onclick="setDateFilter('dashboard','month',this)">This Month</div>
+        <div class="date-pill" onclick="setDateFilter('dashboard','custom',this)">Custom</div>
+        <div class="date-range-custom" id="dash-custom-range" style="display:none;">
+          <input type="date" id="dash-date-from" onchange="renderDashboard()">
+          <span class="date-range-separator">→</span>
+          <input type="date" id="dash-date-to" onchange="renderDashboard()">
+        </div>
+        <div class="date-range-result" id="dash-date-result"></div>
+      </div>
+      <div class="stats-grid" id="dash-stats"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Productivity (7 days)</div>
+            <div class="tabs" id="dash-chart-tabs">
+              <div class="tab active" onclick="switchDashChart('week',this)">Week</div>
+              <div class="tab" onclick="switchDashChart('month',this)">Month</div>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="prodChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Time Breakdown</div></div>
+          <div class="chart-container"><canvas id="timeChart"></canvas></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Today's Tasks</div>
+            <button class="btn btn-sm btn-secondary" onclick="showPage('tasks')">View All</button>
+          </div>
+          <div id="dash-tasks" class="task-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Habit Check-In</div>
+            <div class="card-subtitle" id="dash-habit-date"></div>
+          </div>
+          <div id="dash-habits" class="habit-grid"></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Smart Insights</div></div>
+          <div id="dash-insights" class="insight-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Activity (30 days)</div></div>
+          <div class="heatmap-grid" id="dash-heatmap"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:10px;font-size:11px;color:var(--text-dim);">
+            <div class="heatmap-cell" style="width:12px;height:12px;background:var(--bg-hover);border-radius:2px;"></div>
+            <span>None</span>
+            <div class="heatmap-cell" data-level="1" style="width:12px;height:12px;border-radius:2px;"></div>
+            <div class="heatmap-cell" data-level="2" style="width:12px;height:12px;border-radius:2px;"></div>
+            <div class="heatmap-cell" data-level="3" style="width:12px;height:12px;border-radius:2px;"></div>
+            <div class="heatmap-cell" data-level="4" style="width:12px;height:12px;border-radius:2px;"></div>
+            <span>High</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TASKS PAGE ===================== -->
+    <div id="page-tasks" class="page">
+      <!-- Date Range Filter -->
+      <div class="date-range-bar" id="task-date-bar">
+        <span class="date-range-label">📅 Period:</span>
+        <div class="date-pill active" onclick="setDateFilter('tasks','all',this)">All</div>
+        <div class="date-pill" onclick="setDateFilter('tasks','today',this)">Today</div>
+        <div class="date-pill" onclick="setDateFilter('tasks','yesterday',this)">Yesterday</div>
+        <div class="date-pill" onclick="setDateFilter('tasks','week',this)">This Week</div>
+        <div class="date-pill" onclick="setDateFilter('tasks','month',this)">This Month</div>
+        <div class="date-pill" onclick="setDateFilter('tasks','custom',this)">Custom</div>
+        <div class="date-range-custom" id="task-custom-range" style="display:none;">
+          <input type="date" id="task-date-from" onchange="renderTasks()">
+          <span class="date-range-separator">→</span>
+          <input type="date" id="task-date-to" onchange="renderTasks()">
+        </div>
+        <div class="date-range-result" id="task-date-result"></div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <input type="text" id="task-search" placeholder="Search tasks..." oninput="renderTasks()">
+        </div>
+        <select id="task-filter-status" onchange="renderTasks()" style="width:auto;">
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+        </select>
+        <select id="task-filter-priority" onchange="renderTasks()" style="width:auto;">
+          <option value="all">All Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select id="task-filter-cat" onchange="renderTasks()" style="width:auto;">
+          <option value="all">All Categories</option>
+        </select>
+        <button class="btn btn-primary" onclick="openTaskModal()">+ Add Task</button>
+      </div>
+      <div id="task-list" class="task-list"></div>
+    </div>
+
+    <!-- ===================== HABITS PAGE ===================== -->
+    <div id="page-habits" class="page">
+      <!-- Date Range Filter -->
+      <div class="date-range-bar" id="habit-date-bar">
+        <span class="date-range-label">📅 Period:</span>
+        <div class="date-pill active" onclick="setDateFilter('habits','all',this)">All</div>
+        <div class="date-pill" onclick="setDateFilter('habits','today',this)">Today</div>
+        <div class="date-pill" onclick="setDateFilter('habits','yesterday',this)">Yesterday</div>
+        <div class="date-pill" onclick="setDateFilter('habits','week',this)">This Week</div>
+        <div class="date-pill" onclick="setDateFilter('habits','month',this)">This Month</div>
+        <div class="date-pill" onclick="setDateFilter('habits','custom',this)">Custom</div>
+        <div class="date-range-custom" id="habit-custom-range" style="display:none;">
+          <input type="date" id="habit-date-from" onchange="renderHabits()">
+          <span class="date-range-separator">→</span>
+          <input type="date" id="habit-date-to" onchange="renderHabits()">
+        </div>
+        <div class="date-range-result" id="habit-date-result"></div>
+      </div>
+      <div class="stats-grid" id="habit-stats"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Habit Tracker</div>
+          <button class="btn btn-primary btn-sm" onclick="openHabitModal()">+ Add Habit</button>
+        </div>
+        <div id="habit-list" class="habit-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Weekly Performance</div></div>
+        <div class="chart-container"><canvas id="habitWeekChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ===================== CONTENT PAGE ===================== -->
+    <div id="page-content" class="page">
+      <!-- Date Range Filter -->
+      <div class="date-range-bar" id="content-date-bar">
+        <span class="date-range-label">📅 Period:</span>
+        <div class="date-pill active" onclick="setDateFilter('content','all',this)">All</div>
+        <div class="date-pill" onclick="setDateFilter('content','today',this)">Today</div>
+        <div class="date-pill" onclick="setDateFilter('content','yesterday',this)">Yesterday</div>
+        <div class="date-pill" onclick="setDateFilter('content','week',this)">This Week</div>
+        <div class="date-pill" onclick="setDateFilter('content','month',this)">This Month</div>
+        <div class="date-pill" onclick="setDateFilter('content','custom',this)">Custom</div>
+        <div class="date-range-custom" id="content-custom-range" style="display:none;">
+          <input type="date" id="content-date-from" onchange="renderContent()">
+          <span class="date-range-separator">→</span>
+          <input type="date" id="content-date-to" onchange="renderContent()">
+        </div>
+        <div class="date-range-result" id="content-date-result"></div>
+      </div>
+      <div class="stats-grid" id="content-stats"></div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <input type="text" id="content-search" placeholder="Search content..." oninput="renderContent()">
+        </div>
+        <select id="content-filter-cat" onchange="renderContent()" style="width:auto;">
+          <option value="all">All Types</option>
+          <option value="YouTube">YouTube</option>
+          <option value="Shorts">Shorts</option>
+          <option value="Reels">Reels</option>
+        </select>
+        <button class="btn btn-primary" onclick="openContentModal()">+ Add Content</button>
+      </div>
+      <div id="content-list" class="pipeline-grid"></div>
+    </div>
+
+    <!-- ===================== GOALS PAGE ===================== -->
+    <div id="page-goals" class="page">
+      <!-- Date Range Filter -->
+      <div class="date-range-bar" id="goals-date-bar">
+        <span class="date-range-label">📅 Period:</span>
+        <div class="date-pill active" onclick="setDateFilter('goals','all',this)">All</div>
+        <div class="date-pill" onclick="setDateFilter('goals','today',this)">Today</div>
+        <div class="date-pill" onclick="setDateFilter('goals','yesterday',this)">Yesterday</div>
+        <div class="date-pill" onclick="setDateFilter('goals','week',this)">This Week</div>
+        <div class="date-pill" onclick="setDateFilter('goals','month',this)">This Month</div>
+        <div class="date-pill" onclick="setDateFilter('goals','custom',this)">Custom</div>
+        <div class="date-range-custom" id="goals-custom-range" style="display:none;">
+          <input type="date" id="goals-date-from" onchange="renderGoals()">
+          <span class="date-range-separator">→</span>
+          <input type="date" id="goals-date-to" onchange="renderGoals()">
+        </div>
+        <div class="date-range-result" id="goals-date-result"></div>
+      </div>
+      <div class="filter-bar"><div style="flex:1"></div><button class="btn btn-primary" onclick="openGoalModal()">+ Add Goal</button></div>
+      <div class="tabs" id="goal-tabs" style="margin-top:4px;">
+        <div class="tab active" onclick="switchGoalTab('daily',this)">Daily</div>
+        <div class="tab" onclick="switchGoalTab('weekly',this)">Weekly</div>
+        <div class="tab" onclick="switchGoalTab('monthly',this)">Monthly</div>
+      </div>
+      <div id="goal-list" class="grid-2" style="margin-top:4px;"></div>
+    </div>
+
+    <!-- ===================== TIME TRACKING PAGE ===================== -->
+    <div id="page-timetracking" class="page">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Active Timer</div></div>
+          <div class="big-timer" id="active-timer">00:00:00</div>
+          <div style="text-align:center;color:var(--text-secondary);font-size:13px;margin-bottom:16px;" id="timer-label">No timer running</div>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            <button class="btn btn-primary" id="timer-start-btn" onclick="startGlobalTimer()">▶ Start</button>
+            <button class="btn btn-secondary" id="timer-stop-btn" onclick="stopGlobalTimer()" style="display:none;">■ Stop</button>
+          </div>
+          <div style="margin-top:16px;">
+            <label class="form-label">Track for:</label>
+            <select id="timer-task-select" style="margin-top:4px;"></select>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Today's Time</div></div>
+          <div class="chart-container"><canvas id="todayTimeChart"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Time Log</div></div>
+        <div id="time-log" class="timeline"></div>
+      </div>
+    </div>
+
+    <!-- ===================== HISTORY PAGE ===================== -->
+    <div id="page-history" class="page">
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <input type="text" id="history-search" placeholder="Search history..." oninput="renderHistory()">
+        </div>
+        <select id="history-filter-type" onchange="renderHistory()" style="width:auto;">
+          <option value="all">All Types</option>
+          <option value="task">Tasks</option>
+          <option value="habit">Habits</option>
+          <option value="content">Content</option>
+          <option value="goal">Goals</option>
+        </select>
+        <input type="date" id="history-date-from" onchange="renderHistory()" style="width:auto;">
+        <input type="date" id="history-date-to" onchange="renderHistory()" style="width:auto;">
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Activity Log</div>
+          <div class="card-subtitle" id="history-count">0 entries</div>
+        </div>
+        <div id="history-list" class="timeline"></div>
+      </div>
+    </div>
+
+    <!-- ===================== CATEGORIES PAGE ===================== -->
+    <div id="page-categories" class="page">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Manage Categories</div>
+          <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Add Category</button>
+        </div>
+        <div id="category-list" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Category Performance</div></div>
+        <div class="chart-container"><canvas id="catChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ===================== INSIGHTS PAGE ===================== -->
+    <div id="page-insights" class="page">
+      <div class="stats-grid" id="insight-stats"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Smart Insights</div></div>
+          <div id="insights-list" class="insight-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Best vs Worst Days</div></div>
+          <div class="chart-container"><canvas id="dayPerfChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== DATA PAGE ===================== -->
+    <div id="page-data" class="page">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Data Management</div></div>
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">Export each module as a CSV file.</div>
+            <div class="data-strip">
+              <button class="btn btn-secondary" onclick="exportCSV('tasks')">⬇ Tasks CSV</button>
+              <button class="btn btn-secondary" onclick="exportCSV('habits')">⬇ Habits CSV</button>
+              <button class="btn btn-secondary" onclick="exportCSV('content')">⬇ Content CSV</button>
+              <button class="btn btn-secondary" onclick="exportCSV('goals')">⬇ Goals CSV</button>
+              <button class="btn btn-secondary" onclick="exportCSV('timelog')">⬇ Time Log CSV</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Import from a previously exported CSV file.</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <select id="import-csv-module" style="width:auto;">
+                <option value="tasks">Tasks</option>
+                <option value="habits">Habits</option>
+                <option value="content">Content</option>
+                <option value="goals">Goals</option>
+              </select>
+              <input type="file" id="import-file" accept=".csv" style="display:none;" onchange="importCSV(this)">
+              <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">⬆ Import CSV</button>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:16px;">
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">⚠️ Requires passcode. This will permanently delete all your data.</div>
+            <button class="btn btn-danger" onclick="requirePasscode(confirmReset)">🗑 Reset All Data</button>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:16px;">
+            <div class="card-title" style="margin-bottom:12px;">Storage Info</div>
+            <div id="storage-info" style="font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);line-height:2;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SETTINGS PAGE ===================== -->
+    <div id="page-settings" class="page">
+      <div class="settings-section">
+        <div class="settings-title">🔐 Passcode Settings</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+          Edit &amp; delete actions anywhere require a passcode.<br>
+          Default passcode: <code style="color:var(--accent);font-family:var(--font-mono);">1234</code>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Current Passcode</label>
+            <input type="password" id="settings-current-pc" placeholder="Enter current passcode" maxlength="8" style="letter-spacing:4px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Passcode (4–8 digits)</label>
+            <input type="password" id="settings-new-pc" placeholder="Enter new passcode" maxlength="8" style="letter-spacing:4px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Passcode</label>
+            <input type="password" id="settings-confirm-pc" placeholder="Re-enter new passcode" maxlength="8" style="letter-spacing:4px;">
+          </div>
+          <button class="btn btn-primary" style="align-self:flex-start;" onclick="changePasscode()">Update Passcode</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+</div><!-- /main -->
+
+<!-- ===================== MODALS ===================== -->
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="task-modal-title">Add Task</div>
+      <button class="modal-close" onclick="closeModal('task-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="task-id">
+      <div class="form-group">
+        <label class="form-label">Task Title *</label>
+        <input type="text" id="task-title-input" placeholder="What needs to be done?">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select id="task-priority-input">
+            <option value="high">🔴 High</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="low">🟢 Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="task-category-input"></select>
+          <div class="inline-cat-row">
+            <input type="text" id="task-inline-cat-name" placeholder="New category name...">
+            <button class="btn btn-secondary" onclick="inlineAddCat('task-category-input','task-inline-cat-name')">+ Add</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deadline</label>
+          <input type="date" id="task-deadline-input">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Recurring</label>
+          <select id="task-recurring-input">
+            <option value="none">None</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="task-status-input">
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea id="task-notes-input" placeholder="Add notes..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subtasks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim);font-size:11px;">(press Enter to add each)</span></label>
+        <div id="subtask-list-edit" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="subtask-input" placeholder="Add subtask, press Enter..." style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtaskToForm();}">
+          <button class="btn btn-secondary btn-sm" onclick="addSubtaskToForm()">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('task-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Habit Modal -->
+<div class="modal-overlay" id="habit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="habit-modal-title">Add Habit</div>
+      <button class="modal-close" onclick="closeModal('habit-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="habit-id">
+      <div class="form-group">
+        <label class="form-label">Habit Name *</label>
+        <input type="text" id="habit-name-input" placeholder="e.g. Morning Workout">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="habit-category-input">
+            <option value="Health">Health</option>
+            <option value="Learning">Learning</option>
+            <option value="Work">Work</option>
+            <option value="Mindfulness">Mindfulness</option>
+            <option value="Custom">Custom</option>
+          </select>
+          <div class="inline-cat-row">
+            <input type="text" id="habit-inline-cat-name" placeholder="New category name...">
+            <button class="btn btn-secondary" onclick="inlineAddHabitCat('habit-inline-cat-name','habit-category-input')">+ Add</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target (days/week)</label>
+          <input type="number" id="habit-target-input" value="7" min="1" max="7">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="habit-desc-input" placeholder="Why is this habit important?" style="min-height:60px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('habit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHabit()">Save Habit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Content Modal -->
+<div class="modal-overlay" id="content-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="content-modal-title">Add Content</div>
+      <button class="modal-close" onclick="closeModal('content-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="content-id">
+      <div class="form-group">
+        <label class="form-label">Video Idea / Title *</label>
+        <input type="text" id="content-title-input" placeholder="e.g. How to master productivity in 2025">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select id="content-cat-input">
+            <option value="YouTube">YouTube</option>
+            <option value="Shorts">Shorts</option>
+            <option value="Reels">Reels</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deadline</label>
+          <input type="date" id="content-deadline-input">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hook / Angle</label>
+        <textarea id="content-hook-input" placeholder="What's the hook of this video?" style="min-height:60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea id="content-notes-input" placeholder="Script outline, references, etc." style="min-height:60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Production Stages <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim);font-size:11px;">(✓ = done · 📝 = add note/link per stage)</span></label>
+        <div id="content-stages-edit" style="display:flex;flex-direction:column;gap:6px;">
+          <!-- Stages rendered by JS -->
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('content-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveContent()">Save Content</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goal Modal -->
+<div class="modal-overlay" id="goal-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="goal-modal-title">Add Goal</div>
+      <button class="modal-close" onclick="closeModal('goal-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="goal-id">
+      <div class="form-group">
+        <label class="form-label">Goal Title *</label>
+        <input type="text" id="goal-title-input" placeholder="e.g. Complete 5 tasks per day">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Period</label>
+          <select id="goal-period-input">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Value</label>
+          <input type="number" id="goal-target-input" placeholder="e.g. 5" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit</label>
+          <input type="text" id="goal-unit-input" placeholder="e.g. tasks, videos, %">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="goal-type-input">
+          <option value="tasks">Tasks Completed</option>
+          <option value="habits">Habit Consistency %</option>
+          <option value="content">Videos Uploaded</option>
+          <option value="time">Hours Tracked</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('goal-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveGoal()">Save Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-overlay" id="category-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Category</div>
+      <button class="modal-close" onclick="closeModal('category-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Category Name *</label>
+        <input type="text" id="cat-name-input" placeholder="e.g. Personal, Design, Marketing">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Color</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;" id="color-picker"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('category-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCategory()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Add Modal -->
+<div class="modal-overlay" id="quick-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Quick Add</div>
+      <button class="modal-close" onclick="closeModal('quick-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs" id="quick-tabs">
+        <div class="tab active" onclick="switchQuickTab('task',this)">Task</div>
+        <div class="tab" onclick="switchQuickTab('habit',this)">Habit</div>
+        <div class="tab" onclick="switchQuickTab('content',this)">Content</div>
+      </div>
+      <div id="quick-task-form" style="margin-top:16px;display:flex;flex-direction:column;gap:12px;">
+        <input type="text" id="qt-title" placeholder="Task title...">
+        <div class="form-row">
+          <select id="qt-priority">
+            <option value="high">High Priority</option>
+            <option value="medium" selected>Medium Priority</option>
+            <option value="low">Low Priority</option>
+          </select>
+          <select id="qt-cat"></select>
+        </div>
+        <input type="date" id="qt-deadline">
+      </div>
+      <div id="quick-habit-form" style="margin-top:16px;display:none;flex-direction:column;gap:12px;">
+        <input type="text" id="qh-name" placeholder="Habit name...">
+        <select id="qh-cat">
+          <option value="Health">Health</option>
+          <option value="Learning">Learning</option>
+          <option value="Work">Work</option>
+        </select>
+      </div>
+      <div id="quick-content-form" style="margin-top:16px;display:none;flex-direction:column;gap:12px;">
+        <input type="text" id="qc-title" placeholder="Video idea or title...">
+        <select id="qc-type">
+          <option value="YouTube">YouTube</option>
+          <option value="Shorts">Shorts</option>
+          <option value="Reels">Reels</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('quick-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveQuick()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PASSCODE OVERLAY ===================== -->
+<div id="passcode-overlay" style="display:none;" class="passcode-overlay">
+  <div class="passcode-box">
+    <div class="passcode-title">🔐 Passcode Required</div>
+    <div class="passcode-hint">Enter your passcode to continue</div>
+    <div class="passcode-dots" id="pc-dots">
+      <div class="passcode-dot"></div>
+      <div class="passcode-dot"></div>
+      <div class="passcode-dot"></div>
+      <div class="passcode-dot"></div>
+    </div>
+    <div class="passcode-error" id="pc-error"></div>
+    <div class="numpad">
+      <button class="numpad-btn" onclick="pcPress('1')">1</button>
+      <button class="numpad-btn" onclick="pcPress('2')">2</button>
+      <button class="numpad-btn" onclick="pcPress('3')">3</button>
+      <button class="numpad-btn" onclick="pcPress('4')">4</button>
+      <button class="numpad-btn" onclick="pcPress('5')">5</button>
+      <button class="numpad-btn" onclick="pcPress('6')">6</button>
+      <button class="numpad-btn" onclick="pcPress('7')">7</button>
+      <button class="numpad-btn" onclick="pcPress('8')">8</button>
+      <button class="numpad-btn" onclick="pcPress('9')">9</button>
+      <button class="numpad-btn del" onclick="pcPress('clear')">✕</button>
+      <button class="numpad-btn" onclick="pcPress('0')">0</button>
+      <button class="numpad-btn del" onclick="pcPress('back')">⌫</button>
+    </div>
+    <button class="passcode-cancel" onclick="pcCancel()">Cancel</button>
+  </div>
+</div>
+
+<!-- ===================== STAGE NOTE MODAL ===================== -->
+<div class="modal-overlay" id="stage-note-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="stage-note-title">📝 Stage Notes</div>
+      <button class="modal-close" onclick="closeModal('stage-note-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">
+        Add your idea details, title concept, script link, references, or any notes for this stage.
+      </div>
+      <textarea id="stage-note-input" placeholder="e.g. What the idea is about...&#10;Title option: '5 habits that changed my life'&#10;Script link: https://docs.google.com/..." style="min-height:140px;font-size:13px;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('stage-note-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStageNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script type="module">
+// ============================================================
+// FIREBASE SETUP  ✅ Added Firebase
+// ============================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getFirestore, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAv9NgB8e3UqjrdJP6U2hy0B9agZwRtNTM",
+  authDomain: "sauravtask-e2e49.firebaseapp.com",
+  projectId: "sauravtask-e2e49",
+  storageBucket: "sauravtask-e2e49.firebasestorage.app",
+  messagingSenderId: "997442277464",
+  appId: "1:997442277464:web:96eab391449df141e03a2d",
+  measurementId: "G-CM5VB68MLZ"
+};
+
+const _fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(_fbApp);
+
+// make globally accessible
+window.db = db;
+window.setDoc = setDoc;
+window.doc = doc;
+window.getDoc = getDoc;
+
+// ============================================================
+// DATA LAYER
+// ============================================================
+// ❌ Removed: const STORAGE_KEY = 'flowos_v2';
+const FIRESTORE_USER = 'user1';          // ✅ Firestore document ID
+const FIRESTORE_COL  = 'users';          // ✅ Firestore collection
+const STAGES = ['Idea','Title','Thumbnail','Hook','Script','Shoot','Edit','Upload'];
+const CAT_COLORS = ['#7c6af7','#f7a66a','#6af7c4','#f76a8a','#f7e06a','#6ab4f7','#c46af7','#6af7a8'];
+
+let data = {
+  tasks: [],
+  habits: [],
+  content: [],
+  goals: [],
+  categories: [
+    {id:'cat1',name:'Work',color:'#7c6af7'},
+    {id:'cat2',name:'Personal',color:'#f7a66a'},
+    {id:'cat3',name:'Health',color:'#6af7c4'},
+    {id:'cat4',name:'Learning',color:'#f76a8a'}
+  ],
+  timeLog: [],
+  activityLog: [],
+  settings: { passcode: '1234' }
+};
+
+let globalTimer = null;
+let globalTimerStart = null;
+let globalTimerTask = null;
+let globalTimerSeconds = 0;
+let taskTimers = {}; // taskId -> {running, seconds, start}
+let editingSubtasks = [];
+let currentGoalTab = 'daily';
+let selectedCatColor = CAT_COLORS[0];
+let dashChartMode = 'week';
+let prodChart, timeChart, habitWeekChart, catChart, dayPerfChart, todayTimeChart;
+
+// Date range filter state per module
+const dateFilters = {
+  tasks:     { mode: 'all' },
+  habits:    { mode: 'all' },
+  content:   { mode: 'all' },
+  goals:     { mode: 'all' },
+  dashboard: { mode: 'all' }
+};
+
+// ✏️ Modified: load() is now async and reads from Firestore
+async function load() {
+  try {
+    // ✅ Added: Read from Firestore
+    const docRef = doc(db, FIRESTORE_COL, FIRESTORE_USER);
+    const snap = await getDoc(docRef);
+
+    if (snap.exists()) {
+      const parsed = snap.data().appData;
+      if (parsed) {
+        data = { ...data, ...parsed };
+      }
+    }
+
+    // Ensure settings.passcode always exists
+    if (!data.settings) data.settings = { passcode: '1234' };
+    if (!data.settings.passcode) data.settings.passcode = '1234';
+
+  } catch(e) {
+    console.error('Load error', e);
+  }
+}
+
+// ✏️ Modified: save() is now async and writes to Firestore
+// Called fire-and-forget at all existing call sites — no await needed there
+async function save() {
+  try {
+    // ✅ Added: Write to Firestore
+    await setDoc(doc(db, FIRESTORE_COL, FIRESTORE_USER), {
+      appData: data
+    });
+  } catch(e) {
+    console.error('Save error', e);
+  }
+}
+
+function uid() { return 'id' + Date.now() + Math.random().toString(36).slice(2,7); }
+
+// ---- IST (India/Kolkata, UTC+5:30) helpers ----
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // 5h 30m in ms
+
+function toIST(date) {
+  // Returns a Date object whose UTC fields represent the IST local time
+  return new Date(date.getTime() + IST_OFFSET_MS);
+}
+
+function today() {
+  // Returns YYYY-MM-DD in IST
+  return toIST(new Date()).toISOString().split('T')[0];
+}
+
+function tsToISTDate(ts) {
+  // Converts a timestamp (ms) to YYYY-MM-DD in IST
+  return toIST(new Date(ts)).toISOString().split('T')[0];
+}
+
+function nowStr() {
+  return new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
+}
+
+function dateStr(d) {
+  return new Date(d).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+}
+// ---- end IST helpers ----
+
+function logActivity(type, text, extra = {}) {
+  data.activityLog.unshift({ id: uid(), type, text, date: today(), time: nowStr(), ts: Date.now(), ...extra });
+  if (data.activityLog.length > 500) data.activityLog.length = 500;
+  save();
+}
+
+// ============================================================
+// LIVE CLOCK  (IST)
+// ============================================================
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const istNow = toIST(now);
+
+    // Time: HH:MM:SS
+    const hh = String(istNow.getUTCHours()).padStart(2,'0');
+    const mm = String(istNow.getUTCMinutes()).padStart(2,'0');
+    const ss = String(istNow.getUTCSeconds()).padStart(2,'0');
+    const timeEl = document.getElementById('clock-time');
+    if (timeEl) timeEl.textContent = `${hh}:${mm}:${ss}`;
+
+    // Date: e.g. "Tuesday, 31 Mar 2026"
+    const dateEl = document.getElementById('clock-date');
+    if (dateEl) {
+      dateEl.textContent = istNow.toLocaleDateString('en-IN', {
+        timeZone: 'UTC', // already shifted to IST
+        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric'
+      });
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ============================================================
+// DATE RANGE FILTER SYSTEM
+// ============================================================
+
+// Returns { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' } | null (null = no filter)
+function getDateRange(module) {
+  const f = dateFilters[module];
+  if (!f || f.mode === 'all') return null;
+
+  const t = today(); // IST today
+  const todayDate = new Date(t + 'T00:00:00+05:30');
+
+  if (f.mode === 'today') return { from: t, to: t };
+
+  if (f.mode === 'yesterday') {
+    const y = new Date(todayDate); y.setDate(y.getDate() - 1);
+    const yd = toIST(y).toISOString().split('T')[0];
+    return { from: yd, to: yd };
+  }
+
+  if (f.mode === 'week') {
+    // Monday–today
+    const dow = todayDate.getDay(); // 0=Sun
+    const diffToMon = (dow === 0) ? 6 : dow - 1;
+    const mon = new Date(todayDate); mon.setDate(mon.getDate() - diffToMon);
+    const monStr = toIST(mon).toISOString().split('T')[0];
+    return { from: monStr, to: t };
+  }
+
+  if (f.mode === 'month') {
+    // 1st of current IST month
+    const firstOfMonth = t.slice(0, 7) + '-01';
+    return { from: firstOfMonth, to: t };
+  }
+
+  if (f.mode === 'custom') {
+    // Use the same prefix map as setDateFilter
+    const idMap = { tasks: 'task', habits: 'habit', content: 'content', goals: 'goals', dashboard: 'dash' };
+    const prefix = idMap[module] || module;
+    const fromEl = document.getElementById(prefix + '-date-from');
+    const toEl   = document.getElementById(prefix + '-date-to');
+    const from = fromEl?.value || '';
+    const to   = toEl?.value   || '';
+    if (!from && !to) return null;
+    return { from: from || '2000-01-01', to: to || t };
+  }
+
+  return null;
+}
+
+function setDateFilter(module, mode, pill) {
+  dateFilters[module] = { mode };
+
+  // Map module name to HTML element ID prefix (some are singular in HTML)
+  const idMap = { tasks: 'task', habits: 'habit', content: 'content', goals: 'goals', dashboard: 'dash' };
+  const prefix = idMap[module] || module;
+
+  // Update pill active state
+  const bar = document.getElementById(prefix + '-date-bar');
+  if (bar) {
+    bar.querySelectorAll('.date-pill').forEach(p => p.classList.remove('active','custom-active'));
+    pill.classList.add(mode === 'custom' ? 'custom-active' : 'active');
+  }
+
+  // Show/hide custom inputs
+  const customDiv = document.getElementById(prefix + '-custom-range');
+  if (customDiv) customDiv.style.display = mode === 'custom' ? 'flex' : 'none';
+
+  // Re-render the module
+  if (module === 'tasks')     renderTasks();
+  if (module === 'habits')    renderHabits();
+  if (module === 'content')   renderContent();
+  if (module === 'goals')     renderGoals();
+  if (module === 'dashboard') renderDashboard();
+}
+
+function applyDateRangeToItems(items, module, getDateFn) {
+  const range = getDateRange(module);
+  if (!range) return items;
+  return items.filter(item => {
+    const d = getDateFn(item);
+    if (!d) return true;
+    return d >= range.from && d <= range.to;
+  });
+}
+
+function updateDateRangeResult(module, count, total) {
+  const idMap = { tasks: 'task', habits: 'habit', content: 'content', goals: 'goals', dashboard: 'dash' };
+  const prefix = idMap[module] || module;
+  const resultEl = document.getElementById(prefix + '-date-result');
+  if (!resultEl) return;
+  const range = getDateRange(module);
+  if (!range) { resultEl.textContent = `${total} total`; return; }
+  resultEl.textContent = `${count} of ${total} · ${range.from}${range.from !== range.to ? ' → ' + range.to : ''}`;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const pageTitles = {
+  dashboard: 'Dashboard',
+  tasks: 'Task Management',
+  habits: 'Habit Tracker',
+  content: 'Content Pipeline',
+  goals: 'Goals',
+  timetracking: 'Time Tracking',
+  history: 'History & Logs',
+  categories: 'Categories',
+  insights: 'Smart Insights',
+  data: 'Data Management',
+  settings: 'Settings'
+};
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const navEl = document.querySelector(`[onclick="showPage('${name}')"]`);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[name] || name;
+  closeSidebar();
+  renderPage(name);
+}
+
+function renderPage(name) {
+  if (name === 'dashboard') renderDashboard();
+  else if (name === 'tasks') renderTasks();
+  else if (name === 'habits') renderHabits();
+  else if (name === 'content') renderContent();
+  else if (name === 'goals') renderGoals();
+  else if (name === 'timetracking') renderTimeTracking();
+  else if (name === 'history') renderHistory();
+  else if (name === 'categories') renderCategories();
+  else if (name === 'insights') renderInsights();
+  else if (name === 'data') renderData();
+  // settings page needs no render
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  const icons = { info: 'ℹ️', success: '✅', warn: '⚠️', error: '❌' };
+  t.textContent = (icons[type] || '') + ' ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ============================================================
+// CATEGORIES
+// ============================================================
+function getCatById(id) { return data.categories.find(c => c.id === id); }
+function getCatOptions(selectedId = '') {
+  return data.categories.map(c =>
+    `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`
+  ).join('');
+}
+
+function renderCategories() {
+  const el = document.getElementById('category-list');
+  el.innerHTML = data.categories.map(c => `
+    <div class="category-chip" style="border-color:${c.color}20;">
+      <div class="cat-dot" style="background:${c.color};"></div>
+      ${c.name}
+      <span style="cursor:pointer;color:var(--text-dim);font-size:11px;" onclick="deleteCategory('${c.id}')">✕</span>
+    </div>
+  `).join('');
+  renderCatChart();
+}
+
+function openCategoryModal() {
+  document.getElementById('cat-name-input').value = '';
+  selectedCatColor = CAT_COLORS[0];
+  const picker = document.getElementById('color-picker');
+  picker.innerHTML = CAT_COLORS.map((c,i) => `
+    <div class="color-opt ${i===0?'selected':''}" style="background:${c};" 
+         onclick="selectColor('${c}',this)" data-color="${c}"></div>
+  `).join('');
+  openModal('category-modal');
+}
+
+function selectColor(c, el) {
+  selectedCatColor = c;
+  document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function saveCategory() {
+  const name = document.getElementById('cat-name-input').value.trim();
+  if (!name) { toast('Enter a category name', 'warn'); return; }
+  data.categories.push({ id: uid(), name, color: selectedCatColor });
+  save();
+  closeModal('category-modal');
+  renderCategories();
+  updateCategorySelects();
+  toast('Category added!', 'success');
+}
+
+function deleteCategory(id) {
+  requirePasscode(function() {
+    if (!confirm('Delete this category?')) return;
+    data.categories = data.categories.filter(c => c.id !== id);
+    save();
+    renderCategories();
+    updateCategorySelects();
+  });
+}
+
+function updateCategorySelects() {
+  const selects = ['task-category-input','qt-cat'];
+  selects.forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.innerHTML = getCatOptions();
+  });
+  // Task filter
+  const tf = document.getElementById('task-filter-cat');
+  if (tf) {
+    tf.innerHTML = `<option value="all">All Categories</option>` +
+      data.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
+}
+
+// Inline add category (for task/goal modals that use data.categories)
+function inlineAddCat(selectId, inputId) {
+  const name = document.getElementById(inputId).value.trim();
+  if (!name) { toast('Enter a category name', 'warn'); return; }
+  const color = CAT_COLORS[data.categories.length % CAT_COLORS.length];
+  const newCat = { id: uid(), name, color };
+  data.categories.push(newCat);
+  save();
+  updateCategorySelects();
+  // Select the newly added cat in the target select
+  const sel = document.getElementById(selectId);
+  if (sel) { sel.innerHTML = getCatOptions(newCat.id); }
+  document.getElementById(inputId).value = '';
+  toast('Category added!', 'success');
+}
+
+// Inline add for habit category (habit uses a plain string, not data.categories)
+function inlineAddHabitCat(inputId, selectId) {
+  const name = document.getElementById(inputId).value.trim();
+  if (!name) { toast('Enter a category name', 'warn'); return; }
+  const sel = document.getElementById(selectId);
+  if (sel) {
+    // Add option if not already present
+    const exists = Array.from(sel.options).some(o => o.value === name);
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      sel.appendChild(opt);
+    }
+    sel.value = name;
+  }
+  document.getElementById(inputId).value = '';
+  toast('Category added!', 'success');
+}
+
+// ============================================================
+// PASSCODE SYSTEM
+// ============================================================
+let _pcBuffer = '';
+let _pcCallback = null;
+
+function requirePasscode(callback) {
+  _pcBuffer = '';
+  _pcCallback = callback;
+  _renderPcDots();
+  document.getElementById('pc-error').textContent = '';
+  document.getElementById('passcode-overlay').style.display = 'flex';
+}
+
+function pcPress(key) {
+  if (key === 'clear') { _pcBuffer = ''; _renderPcDots(); return; }
+  if (key === 'back') { _pcBuffer = _pcBuffer.slice(0, -1); _renderPcDots(); return; }
+  if (_pcBuffer.length >= 8) return;
+  _pcBuffer += key;
+  _renderPcDots();
+  // Auto-check when length matches passcode
+  if (_pcBuffer.length >= data.settings.passcode.length) {
+    setTimeout(_pcCheck, 150);
+  }
+}
+
+function _pcCheck() {
+  if (_pcBuffer === data.settings.passcode) {
+    document.getElementById('passcode-overlay').style.display = 'none';
+    _pcBuffer = '';
+    if (_pcCallback) _pcCallback();
+    _pcCallback = null;
+  } else {
+    document.getElementById('pc-error').textContent = 'Incorrect passcode. Try again.';
+    _pcBuffer = '';
+    _renderPcDots();
+  }
+}
+
+function _renderPcDots() {
+  const len = data.settings.passcode.length;
+  const el = document.getElementById('pc-dots');
+  el.innerHTML = Array.from({length: len}, (_, i) =>
+    `<div class="passcode-dot${i < _pcBuffer.length ? ' filled' : ''}"></div>`
+  ).join('');
+}
+
+function pcCancel() {
+  document.getElementById('passcode-overlay').style.display = 'none';
+  _pcBuffer = '';
+  _pcCallback = null;
+}
+
+function changePasscode() {
+  const curr = document.getElementById('settings-current-pc').value;
+  const newPc = document.getElementById('settings-new-pc').value;
+  const conf = document.getElementById('settings-confirm-pc').value;
+  if (curr !== data.settings.passcode) { toast('Current passcode is wrong', 'error'); return; }
+  if (!/^\d{4,8}$/.test(newPc)) { toast('Passcode must be 4–8 digits', 'warn'); return; }
+  if (newPc !== conf) { toast('Passcodes do not match', 'warn'); return; }
+  data.settings.passcode = newPc;
+  save();
+  document.getElementById('settings-current-pc').value = '';
+  document.getElementById('settings-new-pc').value = '';
+  document.getElementById('settings-confirm-pc').value = '';
+  toast('Passcode updated!', 'success');
+}
+
+// ============================================================
+// STAGE NOTES (Content Pipeline)
+// ============================================================
+let _stageNoteContext = null; // { contentId, stage }
+
+function openStageNote(contentId, stage, e) {
+  if (e) e.stopPropagation();
+  _stageNoteContext = { contentId, stage };
+  const c = data.content.find(c => c.id === contentId);
+  const existing = c?.stageNotes?.[stage] || '';
+  document.getElementById('stage-note-title').textContent = `📝 ${stage} — Notes`;
+  document.getElementById('stage-note-input').value = existing;
+  openModal('stage-note-modal');
+}
+
+function saveStageNote() {
+  if (!_stageNoteContext) return;
+  const { contentId, stage } = _stageNoteContext;
+  const c = data.content.find(c => c.id === contentId);
+  if (c) {
+    if (!c.stageNotes) c.stageNotes = {};
+    c.stageNotes[stage] = document.getElementById('stage-note-input').value;
+    save();
+    renderContent();
+  }
+  closeModal('stage-note-modal');
+  toast('Note saved!', 'success');
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+function openTaskModal(id = null) {
+  editingSubtasks = [];
+  const modal = document.getElementById('task-modal');
+  document.getElementById('task-id').value = id || '';
+  document.getElementById('task-modal-title').textContent = id ? 'Edit Task' : 'Add Task';
+  document.getElementById('task-category-input').innerHTML = getCatOptions();
+  if (id) {
+    const t = data.tasks.find(t => t.id === id);
+    if (t) {
+      document.getElementById('task-title-input').value = t.title;
+      document.getElementById('task-priority-input').value = t.priority;
+      document.getElementById('task-category-input').value = t.categoryId || '';
+      document.getElementById('task-deadline-input').value = t.deadline || '';
+      document.getElementById('task-recurring-input').value = t.recurring || 'none';
+      document.getElementById('task-status-input').value = t.status;
+      document.getElementById('task-notes-input').value = t.notes || '';
+      editingSubtasks = [...(t.subtasks || [])];
+    }
+  } else {
+    document.getElementById('task-title-input').value = '';
+    document.getElementById('task-priority-input').value = 'medium';
+    document.getElementById('task-deadline-input').value = '';
+    document.getElementById('task-recurring-input').value = 'none';
+    document.getElementById('task-status-input').value = 'pending';
+    document.getElementById('task-notes-input').value = '';
+  }
+  renderSubtaskFormList();
+  openModal('task-modal');
+}
+
+function renderSubtaskFormList() {
+  const el = document.getElementById('subtask-list-edit');
+  el.innerHTML = editingSubtasks.map((s, i) => `
+    <div style="display:flex;gap:8px;align-items:center;background:var(--bg-input);padding:6px 10px;border-radius:6px;border:1px solid var(--border);">
+      <span style="flex:1;font-size:13px;">${s.title}</span>
+      <button class="btn btn-icon btn-sm btn-secondary" style="font-size:11px;" onclick="removeSubtask(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function addSubtaskToForm() {
+  const inp = document.getElementById('subtask-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  editingSubtasks.push({ id: uid(), title: val, done: false });
+  inp.value = '';
+  renderSubtaskFormList();
+}
+
+function removeSubtask(i) {
+  editingSubtasks.splice(i, 1);
+  renderSubtaskFormList();
+}
+
+function saveTask() {
+  const title = document.getElementById('task-title-input').value.trim();
+  if (!title) { toast('Enter a task title', 'warn'); return; }
+  const id = document.getElementById('task-id').value;
+  const taskData = {
+    title,
+    priority: document.getElementById('task-priority-input').value,
+    categoryId: document.getElementById('task-category-input').value,
+    deadline: document.getElementById('task-deadline-input').value,
+    recurring: document.getElementById('task-recurring-input').value,
+    status: document.getElementById('task-status-input').value,
+    notes: document.getElementById('task-notes-input').value,
+    subtasks: [...editingSubtasks],
+    updatedAt: Date.now()
+  };
+  if (id) {
+    const idx = data.tasks.findIndex(t => t.id === id);
+    data.tasks[idx] = { ...data.tasks[idx], ...taskData };
+    logActivity('task', `Edited task: "${title}"`);
+  } else {
+    const newTask = { id: uid(), createdAt: Date.now(), timeSpent: 0, ...taskData };
+    data.tasks.unshift(newTask);
+    logActivity('task', `Added task: "${title}"`);
+  }
+  save();
+  closeModal('task-modal');
+  renderTasks();
+  updateBadges();
+  toast(id ? 'Task updated!' : 'Task added!', 'success');
+}
+
+function deleteTask(id, e) {
+  if (e) e.stopPropagation();
+  requirePasscode(function() {
+    if (!confirm('Delete this task?')) return;
+    const t = data.tasks.find(t => t.id === id);
+    data.tasks = data.tasks.filter(t => t.id !== id);
+    logActivity('task', `Deleted task: "${t?.title}"`);
+    save();
+    renderTasks();
+    updateBadges();
+    toast('Task deleted', 'info');
+  });
+}
+
+function toggleTask(id, e) {
+  if (e) e.stopPropagation();
+  const t = data.tasks.find(t => t.id === id);
+  if (!t) return;
+  t.status = t.status === 'completed' ? 'pending' : 'completed';
+  t.completedAt = t.status === 'completed' ? Date.now() : null;
+  logActivity('task', `${t.status === 'completed' ? 'Completed' : 'Reopened'} task: "${t.title}"`);
+  save();
+  renderTasks();
+  updateBadges();
+}
+
+function toggleSubtask(taskId, subtaskId) {
+  const t = data.tasks.find(t => t.id === taskId);
+  if (!t) return;
+  const s = t.subtasks.find(s => s.id === subtaskId);
+  if (s) s.done = !s.done;
+  save();
+  renderTasks();
+}
+
+function renderTasks() {
+  const search = (document.getElementById('task-search')?.value || '').toLowerCase();
+  const filterStatus = document.getElementById('task-filter-status')?.value || 'all';
+  const filterPriority = document.getElementById('task-filter-priority')?.value || 'all';
+  const filterCat = document.getElementById('task-filter-cat')?.value || 'all';
+  updateCategorySelects();
+
+  let tasks = [...data.tasks];
+  if (search) tasks = tasks.filter(t => t.title.toLowerCase().includes(search) || (t.notes||'').toLowerCase().includes(search));
+  if (filterStatus !== 'all') tasks = tasks.filter(t => t.status === filterStatus);
+  if (filterPriority !== 'all') tasks = tasks.filter(t => t.priority === filterPriority);
+  if (filterCat !== 'all') tasks = tasks.filter(t => t.categoryId === filterCat);
+
+  // Date range filter — uses createdAt date (IST)
+  const totalBeforeDate = tasks.length;
+  tasks = applyDateRangeToItems(tasks, 'tasks', t => tsToISTDate(t.createdAt));
+  updateDateRangeResult('tasks', tasks.length, totalBeforeDate);
+
+  // Sort: pending first, then by priority
+  const pOrder = { high: 0, medium: 1, low: 2 };
+  tasks.sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
+    return pOrder[a.priority] - pOrder[b.priority];
+  });
+
+  const el = document.getElementById('task-list');
+  if (!el) return;
+  if (!tasks.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-text">No tasks found</div><button class="btn btn-primary" onclick="openTaskModal()">Add Task</button></div>`;
+    return;
+  }
+  el.innerHTML = tasks.map(t => {
+    const cat = getCatById(t.categoryId);
+    const timer = taskTimers[t.id];
+    const timerDisplay = formatSeconds(t.timeSpent || 0);
+    const isOverdue = t.deadline && t.deadline < today() && t.status !== 'completed';
+    const subtasksDone = (t.subtasks||[]).filter(s=>s.done).length;
+    const subtasksTotal = (t.subtasks||[]).length;
+    return `
+      <div class="task-item ${t.status === 'completed' ? 'completed' : ''}" style="${isOverdue ? 'border-color:var(--danger)20;' : ''}">
+        <div class="task-check ${t.status === 'completed' ? 'checked' : ''}" onclick="toggleTask('${t.id}',event)"></div>
+        <div class="task-content">
+          <div class="task-title">${t.title}</div>
+          <div class="task-meta">
+            <span class="tag tag-${t.priority}">${t.priority}</span>
+            ${cat ? `<span class="tag tag-cat" style="background:${cat.color}20;color:${cat.color};">${cat.name}</span>` : ''}
+            ${t.deadline ? `<span class="tag tag-date ${isOverdue ? 'tag-high' : ''}">${isOverdue ? '⚠️' : '📅'} ${t.deadline}</span>` : ''}
+            ${t.recurring !== 'none' ? `<span class="tag" style="background:var(--accent-dim);color:var(--accent);">🔁 ${t.recurring}</span>` : ''}
+            ${subtasksTotal ? `<span class="tag tag-date">${subtasksDone}/${subtasksTotal} subtasks</span>` : ''}
+            <span class="task-timer ${timer?.running ? 'timer-running' : ''}">⏱ ${timerDisplay}</span>
+          </div>
+          ${subtasksTotal ? `<div class="subtask-list">${(t.subtasks||[]).map(s => `
+            <div class="subtask-item">
+              <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask('${t.id}','${s.id}')"></div>
+              <span style="${s.done?'text-decoration:line-through;color:var(--text-dim)':''}">${s.title}</span>
+            </div>`).join('')}
+          </div>` : ''}
+        </div>
+        <div class="task-actions">
+          <button class="task-action-btn" title="${timer?.running ? 'Stop timer' : 'Start timer'}" onclick="toggleTaskTimer('${t.id}',event)">
+            ${timer?.running ? '⏹' : '▶'}
+          </button>
+          <button class="task-action-btn" title="Edit" onclick="requirePasscode(function(){openTaskModal('${t.id}');});event.stopPropagation()">✏️</button>
+          <button class="task-action-btn" title="Delete" onclick="deleteTask('${t.id}',event)">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateBadges() {
+  const pending = data.tasks.filter(t => t.status === 'pending').length;
+  const el = document.getElementById('badge-tasks');
+  if (el) el.textContent = pending;
+}
+
+// ============================================================
+// TASK TIMERS
+// ============================================================
+function toggleTaskTimer(taskId, e) {
+  if (e) e.stopPropagation();
+  if (taskTimers[taskId]?.running) {
+    stopTaskTimer(taskId);
+  } else {
+    // Stop any other running timer
+    Object.keys(taskTimers).forEach(id => { if (taskTimers[id]?.running) stopTaskTimer(id); });
+    startTaskTimer(taskId);
+  }
+}
+
+function startTaskTimer(taskId) {
+  taskTimers[taskId] = { running: true, start: Date.now(), seconds: taskTimers[taskId]?.seconds || 0 };
+  const interval = setInterval(() => {
+    if (!taskTimers[taskId]?.running) { clearInterval(interval); return; }
+    taskTimers[taskId].seconds = Math.floor((Date.now() - taskTimers[taskId].start) / 1000) + (taskTimers[taskId].baseSeconds || 0);
+    const t = data.tasks.find(t => t.id === taskId);
+    if (t) {
+      t.timeSpent = (t.timeSpent || 0);
+      // Update display without full re-render for performance
+    }
+  }, 1000);
+  taskTimers[taskId].interval = interval;
+  taskTimers[taskId].baseSeconds = (data.tasks.find(t=>t.id===taskId)?.timeSpent || 0);
+  renderTasks();
+}
+
+function stopTaskTimer(taskId) {
+  if (!taskTimers[taskId]) return;
+  clearInterval(taskTimers[taskId].interval);
+  const elapsed = Math.floor((Date.now() - taskTimers[taskId].start) / 1000);
+  const t = data.tasks.find(t => t.id === taskId);
+  if (t) {
+    t.timeSpent = (t.timeSpent || 0) + elapsed;
+    data.timeLog.push({ id: uid(), taskId, taskTitle: t.title, seconds: elapsed, date: today(), ts: Date.now() });
+    logActivity('task', `Tracked ${formatSeconds(elapsed)} on "${t.title}"`);
+  }
+  taskTimers[taskId] = { running: false, seconds: 0 };
+  save();
+  renderTasks();
+}
+
+function formatSeconds(s) {
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  const sec = s%60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+function formatSecondsLong(s) {
+  const h = String(Math.floor(s/3600)).padStart(2,'0');
+  const m = String(Math.floor((s%3600)/60)).padStart(2,'0');
+  const sec = String(s%60).padStart(2,'0');
+  return `${h}:${m}:${sec}`;
+}
+
+// ============================================================
+// GLOBAL TIMER
+// ============================================================
+function startGlobalTimer() {
+  const taskId = document.getElementById('timer-task-select').value;
+  globalTimerStart = Date.now();
+  globalTimerTask = taskId;
+  globalTimerSeconds = 0;
+  document.getElementById('timer-start-btn').style.display = 'none';
+  document.getElementById('timer-stop-btn').style.display = '';
+  globalTimer = setInterval(() => {
+    globalTimerSeconds = Math.floor((Date.now() - globalTimerStart) / 1000);
+    document.getElementById('active-timer').textContent = formatSecondsLong(globalTimerSeconds);
+  }, 1000);
+  const t = data.tasks.find(t => t.id === taskId);
+  document.getElementById('timer-label').textContent = t ? `Tracking: ${t.title}` : 'Manual session';
+}
+
+function stopGlobalTimer() {
+  clearInterval(globalTimer);
+  globalTimer = null;
+  const t = data.tasks.find(t => t.id === globalTimerTask);
+  if (t && globalTimerSeconds > 0) {
+    t.timeSpent = (t.timeSpent || 0) + globalTimerSeconds;
+    data.timeLog.push({ id: uid(), taskId: globalTimerTask, taskTitle: t.title, seconds: globalTimerSeconds, date: today(), ts: Date.now() });
+    logActivity('task', `Tracked ${formatSeconds(globalTimerSeconds)} on "${t.title}"`);
+    save();
+  }
+  document.getElementById('active-timer').textContent = '00:00:00';
+  document.getElementById('timer-label').textContent = 'No timer running';
+  document.getElementById('timer-start-btn').style.display = '';
+  document.getElementById('timer-stop-btn').style.display = 'none';
+  toast(`Logged ${formatSeconds(globalTimerSeconds)}`, 'success');
+  renderTimeTracking();
+}
+
+function renderTimeTracking() {
+  // Populate task select
+  const sel = document.getElementById('timer-task-select');
+  if (sel) {
+    sel.innerHTML = `<option value="">-- No specific task --</option>` +
+      data.tasks.filter(t=>t.status!=='completed').map(t => `<option value="${t.id}">${t.title}</option>`).join('');
+  }
+  // Time log
+  const logEl = document.getElementById('time-log');
+  if (logEl) {
+    const logs = [...data.timeLog].sort((a,b) => b.ts - a.ts).slice(0, 30);
+    if (!logs.length) { logEl.innerHTML = '<div class="empty-state"><div class="empty-text">No time tracked yet</div></div>'; return; }
+    logEl.innerHTML = logs.map(l => `
+      <div class="timeline-item">
+        <div class="timeline-dot task"></div>
+        <div class="timeline-content">
+          <div class="timeline-text">${l.taskTitle || 'Manual'} — <strong>${formatSeconds(l.seconds)}</strong></div>
+          <div class="timeline-time">${l.date} ${l.time || ''}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  renderTodayTimeChart();
+}
+
+function renderTodayTimeChart() {
+  const todayLogs = data.timeLog.filter(l => l.date === today());
+  const taskMap = {};
+  todayLogs.forEach(l => {
+    const key = l.taskTitle || 'Manual';
+    taskMap[key] = (taskMap[key] || 0) + l.seconds;
+  });
+  const labels = Object.keys(taskMap);
+  const values = labels.map(k => Math.round(taskMap[k]/60));
+  const ctx = document.getElementById('todayTimeChart');
+  if (!ctx) return;
+  if (todayTimeChart) todayTimeChart.destroy();
+  if (!labels.length) { ctx.parentElement.innerHTML = '<div class="empty-state"><div class="empty-text">No time tracked today</div></div>'; return; }
+  todayTimeChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: CAT_COLORS, borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#8888aa', font: { family: 'DM Sans' } } },
+        tooltip: { callbacks: { label: c => `${c.label}: ${c.raw}m` } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// HABITS
+// ============================================================
+function openHabitModal(id = null) {
+  document.getElementById('habit-id').value = id || '';
+  document.getElementById('habit-modal-title').textContent = id ? 'Edit Habit' : 'Add Habit';
+  if (id) {
+    const h = data.habits.find(h => h.id === id);
+    if (h) {
+      document.getElementById('habit-name-input').value = h.name;
+      document.getElementById('habit-category-input').value = h.category;
+      document.getElementById('habit-target-input').value = h.target || 7;
+      document.getElementById('habit-desc-input').value = h.desc || '';
+    }
+  } else {
+    document.getElementById('habit-name-input').value = '';
+    document.getElementById('habit-category-input').value = 'Health';
+    document.getElementById('habit-target-input').value = 7;
+    document.getElementById('habit-desc-input').value = '';
+  }
+  openModal('habit-modal');
+}
+
+function saveHabit() {
+  const name = document.getElementById('habit-name-input').value.trim();
+  if (!name) { toast('Enter a habit name', 'warn'); return; }
+  const id = document.getElementById('habit-id').value;
+  const habitData = {
+    name,
+    category: document.getElementById('habit-category-input').value,
+    target: parseInt(document.getElementById('habit-target-input').value) || 7,
+    desc: document.getElementById('habit-desc-input').value,
+    updatedAt: Date.now()
+  };
+  if (id) {
+    const idx = data.habits.findIndex(h => h.id === id);
+    data.habits[idx] = { ...data.habits[idx], ...habitData };
+    logActivity('habit', `Edited habit: "${name}"`);
+  } else {
+    data.habits.push({ id: uid(), createdAt: Date.now(), completions: {}, ...habitData });
+    logActivity('habit', `Added habit: "${name}"`);
+  }
+  save();
+  closeModal('habit-modal');
+  renderHabits();
+  toast(id ? 'Habit updated!' : 'Habit added!', 'success');
+}
+
+function deleteHabit(id, e) {
+  if (e) e.stopPropagation();
+  requirePasscode(function() {
+    if (!confirm('Delete this habit?')) return;
+    const h = data.habits.find(h => h.id === id);
+    data.habits = data.habits.filter(h => h.id !== id);
+    logActivity('habit', `Deleted habit: "${h?.name}"`);
+    save();
+    renderHabits();
+  });
+}
+
+function toggleHabitToday(id) {
+  const h = data.habits.find(h => h.id === id);
+  if (!h) return;
+  if (!h.completions) h.completions = {};
+  const t = today();
+  h.completions[t] = !h.completions[t];
+  logActivity('habit', h.completions[t] ? `Completed habit: "${h.name}"` : `Unchecked habit: "${h.name}"`);
+  save();
+  renderHabits();
+}
+
+function getStreak(h) {
+  let streak = 0;
+  let d = new Date();
+  while (true) {
+    const key = toIST(d).toISOString().split('T')[0];
+    if (h.completions[key]) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+
+function getHabitWeekPct(h) {
+  let done = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = toIST(d).toISOString().split('T')[0];
+    if (h.completions[key]) done++;
+  }
+  return Math.round((done / 7) * 100);
+}
+
+function getLast7Days() {
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6-i));
+    return toIST(d).toISOString().split('T')[0];
+  });
+}
+
+function renderHabits() {
+  const el = document.getElementById('habit-list');
+  if (!el) return;
+
+  // Compute the date range for the habit display
+  const range = getDateRange('habits');
+  let viewDays;
+  if (range) {
+    // Build list of all days in range
+    const from = new Date(range.from + 'T00:00:00+05:30');
+    const to   = new Date(range.to   + 'T00:00:00+05:30');
+    viewDays = [];
+    const cursor = new Date(from);
+    while (toIST(cursor).toISOString().split('T')[0] <= range.to) {
+      viewDays.push(toIST(cursor).toISOString().split('T')[0]);
+      cursor.setDate(cursor.getDate() + 1);
+      if (viewDays.length > 365) break; // safety cap
+    }
+  } else {
+    viewDays = getLast7Days();
+  }
+
+  // Show at most 7 day columns (last 7 of range)
+  const displayDays = viewDays.slice(-7);
+  const dayLabels = displayDays.map(d => new Date(d + 'T00:00:00+05:30').toLocaleDateString('en-IN', {weekday:'short'}).slice(0,1));
+
+  // Result label
+  updateDateRangeResult('habits', viewDays.length, viewDays.length);
+
+  if (!data.habits.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔁</div><div class="empty-text">No habits yet</div><button class="btn btn-primary" onclick="openHabitModal()">Add Habit</button></div>`;
+  } else {
+    el.innerHTML = data.habits.map(h => {
+      const streak = getStreak(h);
+      // Period-aware completion %
+      const periodDone = viewDays.filter(d => h.completions[d]).length;
+      const periodPct = viewDays.length ? Math.round((periodDone / viewDays.length) * 100) : 0;
+      const doneToday = h.completions[today()];
+      return `
+        <div class="habit-item">
+          <div class="habit-check-today ${doneToday?'done':''}" onclick="toggleHabitToday('${h.id}')" title="Toggle today">
+            ${doneToday ? '✓' : '○'}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <div class="habit-name">${h.name}</div>
+              <span class="tag" style="background:var(--accent-2-dim);color:var(--accent-2);">${h.category}</span>
+              <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                <span class="habit-streak">🔥 ${streak}d</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent-3);">${periodPct}% (${periodDone}/${viewDays.length}d)</span>
+                <button class="task-action-btn" onclick="requirePasscode(function(){openHabitModal('${h.id}');})">✏️</button>
+                <button class="task-action-btn" onclick="deleteHabit('${h.id}',event)">🗑️</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="habit-days">
+                ${displayDays.map((d,i) => `<div class="habit-day ${h.completions[d]?'done':''} ${d===today()?'today':''}" title="${d}">${dayLabels[i]}</div>`).join('')}
+              </div>
+              <div style="flex:1;">
+                <div class="progress-bar"><div class="progress-fill green" style="width:${periodPct}%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Stats — period-aware
+  const statsEl = document.getElementById('habit-stats');
+  if (statsEl) {
+    const totalHabits = data.habits.length;
+    const todayDone = data.habits.filter(h => h.completions[today()]).length;
+    const avgStreak = data.habits.length ? Math.round(data.habits.reduce((a,h) => a + getStreak(h), 0) / data.habits.length) : 0;
+    const avgPeriodPct = data.habits.length ? Math.round(
+      data.habits.reduce((a,h) => {
+        const done = viewDays.filter(d => h.completions[d]).length;
+        return a + (viewDays.length ? (done / viewDays.length) * 100 : 0);
+      }, 0) / data.habits.length
+    ) : 0;
+    statsEl.innerHTML = `
+      <div class="stat-card accent"><div class="stat-label">Total Habits</div><div class="stat-value">${totalHabits}</div><div class="stat-sub">active habits</div></div>
+      <div class="stat-card accent-3"><div class="stat-label">Done Today</div><div class="stat-value">${todayDone}/${totalHabits}</div><div class="stat-sub">completed today</div></div>
+      <div class="stat-card accent-2"><div class="stat-label">Avg Streak</div><div class="stat-value">${avgStreak}d</div><div class="stat-sub">average streak</div></div>
+      <div class="stat-card accent-4"><div class="stat-label">Period Score</div><div class="stat-value">${avgPeriodPct}%</div><div class="stat-sub">${viewDays.length} day window</div></div>
+    `;
+  }
+  renderHabitWeekChart();
+}
+
+function renderHabitWeekChart() {
+  const ctx = document.getElementById('habitWeekChart');
+  if (!ctx) return;
+  const days = getLast7Days();
+  const labels = days.map(d => new Date(d + 'T00:00:00+05:30').toLocaleDateString('en-IN',{weekday:'short'}));
+  const values = days.map(d => {
+    const done = data.habits.filter(h => h.completions[d]).length;
+    return data.habits.length ? Math.round((done / data.habits.length) * 100) : 0;
+  });
+  if (habitWeekChart) habitWeekChart.destroy();
+  habitWeekChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Habit Completion %',
+        data: values,
+        backgroundColor: 'rgba(106,247,196,0.3)',
+        borderColor: '#6af7c4',
+        borderWidth: 2,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 100, grid: { color: '#252535' }, ticks: { color: '#8888aa', callback: v => v + '%' } },
+        x: { grid: { display: false }, ticks: { color: '#8888aa' } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// CONTENT
+// ============================================================
+function openContentModal(id = null) {
+  document.getElementById('content-id').value = id || '';
+  document.getElementById('content-modal-title').textContent = id ? 'Edit Content' : 'Add Content';
+  const stagesEl = document.getElementById('content-stages-edit');
+
+  const existingStages = {};
+  const existingStageNotes = {};
+
+  if (id) {
+    const c = data.content.find(c => c.id === id);
+    if (c) {
+      document.getElementById('content-title-input').value = c.title;
+      document.getElementById('content-cat-input').value = c.category || 'YouTube';
+      document.getElementById('content-deadline-input').value = c.deadline || '';
+      document.getElementById('content-hook-input').value = c.hook || '';
+      document.getElementById('content-notes-input').value = c.notes || '';
+      Object.assign(existingStages, c.stages || {});
+      Object.assign(existingStageNotes, c.stageNotes || {});
+    }
+  } else {
+    document.getElementById('content-title-input').value = '';
+    document.getElementById('content-cat-input').value = 'YouTube';
+    document.getElementById('content-deadline-input').value = '';
+    document.getElementById('content-hook-input').value = '';
+    document.getElementById('content-notes-input').value = '';
+  }
+
+  stagesEl.innerHTML = STAGES.map(s => {
+    const note = existingStageNotes[s] || '';
+    const hasNote = note.trim().length > 0;
+    return `
+      <div style="background:var(--bg-input);border-radius:6px;border:1px solid var(--border);overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;">
+          <input type="checkbox" id="stage-${s}" ${existingStages[s] ? 'checked' : ''} style="width:auto;cursor:pointer;">
+          <label for="stage-${s}" style="flex:1;font-size:13px;cursor:pointer;${existingStages[s] ? 'text-decoration:line-through;color:var(--text-dim);' : ''}">${s}</label>
+          <button type="button" class="stage-note-btn${hasNote ? ' has-note' : ''}"
+            onclick="_openInlineStageNote('${s}',this)"
+            title="${hasNote ? 'Edit note' : 'Add note'}">
+            ${hasNote ? '📝✓' : '📝'}
+          </button>
+        </div>
+        <textarea id="stage-note-area-${s}"
+          placeholder="Note for ${s}: what's the idea, title draft, script link, references..."
+          style="display:${hasNote ? 'block' : 'none'};width:100%;border:none;border-top:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);padding:8px 10px;font-size:12px;font-family:var(--font-body);resize:vertical;min-height:64px;outline:none;">${hasNote ? note : ''}</textarea>
+      </div>
+    `;
+  }).join('');
+
+  openModal('content-modal');
+}
+
+function _openInlineStageNote(stage, btn) {
+  const area = document.getElementById('stage-note-area-' + stage);
+  if (!area) return;
+  const isHidden = area.style.display === 'none';
+  area.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) { area.focus(); btn.textContent = '📝✓'; }
+  else { btn.textContent = area.value.trim() ? '📝✓' : '📝'; }
+}
+
+function saveContent() {
+  const title = document.getElementById('content-title-input').value.trim();
+  if (!title) { toast('Enter a title or idea', 'warn'); return; }
+  const id = document.getElementById('content-id').value;
+  const stages = {};
+  const stageNotes = {};
+  STAGES.forEach(s => {
+    stages[s] = document.getElementById('stage-' + s)?.checked || false;
+    const noteEl = document.getElementById('stage-note-area-' + s);
+    if (noteEl) stageNotes[s] = noteEl.value || '';
+  });
+  const contentData = {
+    title,
+    category: document.getElementById('content-cat-input').value,
+    deadline: document.getElementById('content-deadline-input').value,
+    hook: document.getElementById('content-hook-input').value,
+    notes: document.getElementById('content-notes-input').value,
+    stages,
+    stageNotes,
+    updatedAt: Date.now()
+  };
+  if (id) {
+    const idx = data.content.findIndex(c => c.id === id);
+    data.content[idx] = { ...data.content[idx], ...contentData };
+    logActivity('content', `Updated content: "${title}"`);
+  } else {
+    data.content.unshift({ id: uid(), createdAt: Date.now(), timeSpent: 0, ...contentData });
+    logActivity('content', `Added content: "${title}"`);
+  }
+  save();
+  closeModal('content-modal');
+  renderContent();
+  toast(id ? 'Content updated!' : 'Content added!', 'success');
+}
+
+function deleteContent(id, e) {
+  if (e) e.stopPropagation();
+  requirePasscode(function() {
+    if (!confirm('Delete this content?')) return;
+    const c = data.content.find(c => c.id === id);
+    data.content = data.content.filter(c => c.id !== id);
+    logActivity('content', `Deleted content: "${c?.title}"`);
+    save();
+    renderContent();
+  });
+}
+
+function toggleContentStage(contentId, stage) {
+  const c = data.content.find(c => c.id === contentId);
+  if (!c) return;
+  c.stages[stage] = !c.stages[stage];
+  save();
+  renderContent();
+}
+
+function getContentPct(c) {
+  const done = STAGES.filter(s => c.stages?.[s]).length;
+  return Math.round((done / STAGES.length) * 100);
+}
+
+function renderContent() {
+  const search = (document.getElementById('content-search')?.value || '').toLowerCase();
+  const filterCat = document.getElementById('content-filter-cat')?.value || 'all';
+  let items = [...data.content];
+  if (search) items = items.filter(c => c.title.toLowerCase().includes(search));
+  if (filterCat !== 'all') items = items.filter(c => c.category === filterCat);
+
+  // Date range filter — uses createdAt date (IST)
+  const totalBeforeDate = items.length;
+  items = applyDateRangeToItems(items, 'content', c => tsToISTDate(c.createdAt));
+  updateDateRangeResult('content', items.length, totalBeforeDate);
+
+  const el = document.getElementById('content-list');
+  if (!el) return;
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🎥</div><div class="empty-text">No content yet</div><button class="btn btn-primary" onclick="openContentModal()">Add Content</button></div>`;
+  } else {
+    el.innerHTML = items.map(c => {
+      const pct = getContentPct(c);
+      const fillClass = pct === 100 ? 'green' : pct > 50 ? 'orange' : '';
+      const isOverdue = c.deadline && c.deadline < today() && pct < 100;
+      return `
+        <div class="content-card">
+          <div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
+              <div class="content-title">${c.title}</div>
+              <div style="display:flex;gap:4px;">
+                <button class="task-action-btn" onclick="requirePasscode(function(){openContentModal('${c.id}');});event.stopPropagation()">✏️</button>
+                <button class="task-action-btn" onclick="deleteContent('${c.id}',event)">🗑️</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <span class="content-category">${c.category}</span>
+              ${c.deadline ? `<span class="tag tag-date ${isOverdue?'tag-high':''}">${isOverdue?'⚠️':'📅'} ${c.deadline}</span>` : ''}
+            </div>
+          </div>
+          <div class="stage-list">
+            ${STAGES.map(s => {
+              const note = c.stageNotes?.[s] || '';
+              const hasNote = note.trim().length > 0;
+              return `
+                <div class="stage-item">
+                  <div class="stage-check ${c.stages?.[s]?'done':''}" onclick="toggleContentStage('${c.id}','${s}')"></div>
+                  <span style="${c.stages?.[s]?'text-decoration:line-through;color:var(--text-dim)':''}">${s}</span>
+                  <button type="button" class="stage-note-btn${hasNote?' has-note':''}"
+                    onclick="openStageNote('${c.id}','${s}',event)"
+                    title="${hasNote ? note.substring(0,60) : 'Add note for '+s}">
+                    ${hasNote ? '📝✓' : '📝'}
+                  </button>
+                </div>
+                ${hasNote ? `<div class="stage-note-preview" title="${note.replace(/"/g,'&quot;')}">${note}</div>` : ''}
+              `;
+            }).join('')}
+          </div>
+          <div>
+            <div class="content-progress-label">
+              <span>Progress</span><span>${pct}%</span>
+            </div>
+            <div class="progress-bar" style="height:6px;margin-top:4px;">
+              <div class="progress-fill ${fillClass}" style="width:${pct}%;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Stats — computed from date-filtered items
+  const statsEl = document.getElementById('content-stats');
+  if (statsEl) {
+    const total = items.length;
+    const completed = items.filter(c => getContentPct(c) === 100).length;
+    const inProgress = items.filter(c => { const p = getContentPct(c); return p > 0 && p < 100; }).length;
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+    const thisWeek = items.filter(c => new Date(c.createdAt) > weekAgo).length;
+    statsEl.innerHTML = `
+      <div class="stat-card accent"><div class="stat-label">Shown</div><div class="stat-value">${total}</div><div class="stat-sub">in period</div></div>
+      <div class="stat-card accent-3"><div class="stat-label">Completed</div><div class="stat-value">${completed}</div><div class="stat-sub">fully uploaded</div></div>
+      <div class="stat-card accent-2"><div class="stat-label">In Progress</div><div class="stat-value">${inProgress}</div><div class="stat-sub">being worked on</div></div>
+      <div class="stat-card accent-4"><div class="stat-label">This Week</div><div class="stat-value">${thisWeek}</div><div class="stat-sub">added this week</div></div>
+    `;
+  }
+}
+
+// ============================================================
+// GOALS
+// ============================================================
+function openGoalModal(id = null) {
+  document.getElementById('goal-id').value = id || '';
+  document.getElementById('goal-modal-title').textContent = id ? 'Edit Goal' : 'Add Goal';
+  if (id) {
+    const g = data.goals.find(g => g.id === id);
+    if (g) {
+      document.getElementById('goal-title-input').value = g.title;
+      document.getElementById('goal-period-input').value = g.period;
+      document.getElementById('goal-target-input').value = g.target;
+      document.getElementById('goal-unit-input').value = g.unit || '';
+      document.getElementById('goal-type-input').value = g.type;
+    }
+  } else {
+    document.getElementById('goal-title-input').value = '';
+    document.getElementById('goal-period-input').value = currentGoalTab;
+    document.getElementById('goal-target-input').value = '';
+    document.getElementById('goal-unit-input').value = '';
+    document.getElementById('goal-type-input').value = 'tasks';
+  }
+  openModal('goal-modal');
+}
+
+function saveGoal() {
+  const title = document.getElementById('goal-title-input').value.trim();
+  if (!title) { toast('Enter a goal title', 'warn'); return; }
+  const id = document.getElementById('goal-id').value;
+  const goalData = {
+    title,
+    period: document.getElementById('goal-period-input').value,
+    target: parseFloat(document.getElementById('goal-target-input').value) || 1,
+    unit: document.getElementById('goal-unit-input').value,
+    type: document.getElementById('goal-type-input').value,
+    updatedAt: Date.now()
+  };
+  if (id) {
+    const idx = data.goals.findIndex(g => g.id === id);
+    data.goals[idx] = { ...data.goals[idx], ...goalData };
+  } else {
+    data.goals.push({ id: uid(), createdAt: Date.now(), ...goalData });
+    logActivity('goal', `Added goal: "${title}"`);
+  }
+  save();
+  closeModal('goal-modal');
+  renderGoals();
+  toast('Goal saved!', 'success');
+}
+
+function deleteGoal(id) {
+  requirePasscode(function() {
+    if (!confirm('Delete this goal?')) return;
+    data.goals = data.goals.filter(g => g.id !== id);
+    save();
+    renderGoals();
+  });
+}
+
+function switchGoalTab(tab, el) {
+  currentGoalTab = tab;
+  document.querySelectorAll('#goal-tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderGoals();
+}
+
+function getGoalProgress(g) {
+  const t = today();
+  const now = new Date();
+  if (g.type === 'tasks') {
+    if (g.period === 'daily') return data.tasks.filter(t => t.status==='completed' && t.completedAt && tsToISTDate(t.completedAt)===today()).length;
+    if (g.period === 'weekly') {
+      const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+      return data.tasks.filter(t => t.status==='completed' && t.completedAt && new Date(t.completedAt) > weekAgo).length;
+    }
+    if (g.period === 'monthly') {
+      const monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth()-1);
+      return data.tasks.filter(t => t.status==='completed' && t.completedAt && new Date(t.completedAt) > monthAgo).length;
+    }
+  }
+  if (g.type === 'habits') {
+    return data.habits.length ? Math.round(data.habits.reduce((a,h)=>a+getHabitWeekPct(h),0)/data.habits.length) : 0;
+  }
+  if (g.type === 'content') {
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+    return data.content.filter(c => getContentPct(c)===100 && c.updatedAt && new Date(c.updatedAt) > weekAgo).length;
+  }
+  if (g.type === 'time') {
+    const todayLogs = data.timeLog.filter(l => l.date === today());
+    return Math.round(todayLogs.reduce((a,l)=>a+l.seconds,0)/3600 * 10) / 10;
+  }
+  return 0;
+}
+
+function renderGoals() {
+  let goals = data.goals.filter(g => g.period === currentGoalTab);
+
+  // Date range filter — filter goals created within range
+  const totalBeforeDate = goals.length;
+  goals = applyDateRangeToItems(goals, 'goals', g => tsToISTDate(g.createdAt));
+  updateDateRangeResult('goals', goals.length, totalBeforeDate);
+
+  const el = document.getElementById('goal-list');
+  if (!el) return;
+  if (!goals.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🎯</div><div class="empty-text">No ${currentGoalTab} goals yet</div><button class="btn btn-primary" onclick="openGoalModal()">Add Goal</button></div>`;
+    return;
+  }
+  el.innerHTML = goals.map(g => {
+    const current = getGoalProgress(g);
+    const pct = Math.min(100, Math.round((current / g.target) * 100));
+    const fillClass = pct >= 100 ? 'green' : pct > 50 ? 'orange' : '';
+    const pctColor = pct >= 100 ? 'var(--accent-3)' : pct > 50 ? 'var(--accent-2)' : 'var(--accent-4)';
+    return `
+      <div class="goal-item">
+        <div class="goal-header">
+          <div class="goal-name">${g.title}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="goal-pct" style="color:${pctColor};">${pct}%</div>
+            <button class="task-action-btn" onclick="requirePasscode(function(){openGoalModal('${g.id}');})">✏️</button>
+            <button class="task-action-btn" onclick="deleteGoal('${g.id}')">🗑️</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);">${current} / ${g.target} ${g.unit}</div>
+        <div class="progress-bar" style="height:8px;">
+          <div class="progress-fill ${fillClass}" style="width:${pct}%;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);">${g.type.toUpperCase()} · ${g.period.toUpperCase()}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+function renderHistory() {
+  const search = (document.getElementById('history-search')?.value || '').toLowerCase();
+  const filterType = document.getElementById('history-filter-type')?.value || 'all';
+  const dateFrom = document.getElementById('history-date-from')?.value || '';
+  const dateTo = document.getElementById('history-date-to')?.value || '';
+
+  let logs = [...data.activityLog];
+  if (search) logs = logs.filter(l => l.text.toLowerCase().includes(search));
+  if (filterType !== 'all') logs = logs.filter(l => l.type === filterType);
+  if (dateFrom) logs = logs.filter(l => l.date >= dateFrom);
+  if (dateTo) logs = logs.filter(l => l.date <= dateTo);
+
+  const el = document.getElementById('history-list');
+  const countEl = document.getElementById('history-count');
+  if (countEl) countEl.textContent = logs.length + ' entries';
+  if (!el) return;
+  if (!logs.length) { el.innerHTML = '<div class="empty-state"><div class="empty-text">No activity found</div></div>'; return; }
+  el.innerHTML = logs.map(l => `
+    <div class="timeline-item">
+      <div class="timeline-dot ${l.type}"></div>
+      <div class="timeline-content">
+        <div class="timeline-text">${l.text}</div>
+        <div class="timeline-time">${l.date} · ${l.time} · <span style="color:var(--accent-3);">${l.type}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// INSIGHTS
+// ============================================================
+function generateInsights() {
+  const insights = [];
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  // Habit streak misses
+  data.habits.forEach(h => {
+    let missed = 0;
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const key = toIST(d).toISOString().split('T')[0];
+      if (!h.completions[key]) missed++;
+    }
+    if (missed >= 2) insights.push({ type: 'warn', text: `You missed "${h.name}" ${missed} days in a row ⚠️` });
+  });
+
+  // Best/worst day
+  const dayScores = {};
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = toIST(d).toISOString().split('T')[0];
+    const dayName = days[d.getDay()];
+    const tasksDone = data.tasks.filter(t => t.completedAt && tsToISTDate(t.completedAt) === key).length;
+    const habitsDone = data.habits.filter(h => h.completions[key]).length;
+    dayScores[dayName] = (dayScores[dayName] || []).concat(tasksDone + habitsDone);
+  }
+  const dayAvgs = Object.entries(dayScores).map(([d, vals]) => [d, vals.reduce((a,b)=>a+b,0)/vals.length]);
+  if (dayAvgs.length) {
+    dayAvgs.sort((a,b)=>b[1]-a[1]);
+    insights.push({ type: 'good', text: `Your most productive day is ${dayAvgs[0][0]} 🚀` });
+    insights.push({ type: 'warn', text: `Your productivity drops on ${dayAvgs[dayAvgs.length-1][0]} 📉` });
+  }
+
+  // Time analysis
+  if (data.timeLog.length) {
+    const taskTimeMap = {};
+    data.timeLog.forEach(l => { taskTimeMap[l.taskTitle || 'Unknown'] = (taskTimeMap[l.taskTitle||'Unknown']||0) + l.seconds; });
+    const sorted = Object.entries(taskTimeMap).sort((a,b)=>b[1]-a[1]);
+    if (sorted[0]) insights.push({ type: 'info', text: `Most time spent on "${sorted[0][0]}" (${formatSeconds(sorted[0][1])}) ⏱️` });
+  }
+
+  // Task completion rate
+  const compRate = data.tasks.length ? Math.round((data.tasks.filter(t=>t.status==='completed').length / data.tasks.length) * 100) : 0;
+  if (compRate < 50 && data.tasks.length > 3) insights.push({ type: 'warn', text: `Task completion rate is ${compRate}% — try breaking tasks into subtasks 💡` });
+  if (compRate >= 80) insights.push({ type: 'good', text: `Great job! Task completion rate is ${compRate}% 🎉` });
+
+  // Overdue tasks
+  const overdue = data.tasks.filter(t => t.deadline && t.deadline < today() && t.status !== 'completed').length;
+  if (overdue > 0) insights.push({ type: 'warn', text: `You have ${overdue} overdue task${overdue > 1 ? 's' : ''} — review your deadlines ⏰` });
+
+  // Content in progress
+  const inProg = data.content.filter(c => { const p = getContentPct(c); return p > 0 && p < 100; }).length;
+  if (inProg > 3) insights.push({ type: 'warn', text: `${inProg} content items are in progress — focus on finishing! 🎯` });
+
+  if (!insights.length) insights.push({ type: 'good', text: 'Keep it up! No issues detected today 🌟' });
+  return insights;
+}
+
+function renderInsights() {
+  const insights = generateInsights();
+  const el = document.getElementById('insights-list');
+  if (el) el.innerHTML = insights.map(i => `<div class="insight-item ${i.type}">${i.text}</div>`).join('');
+
+  // Stats
+  const statsEl = document.getElementById('insight-stats');
+  if (statsEl) {
+    const compRate = data.tasks.length ? Math.round((data.tasks.filter(t=>t.status==='completed').length / data.tasks.length) * 100) : 0;
+    const habitScore = data.habits.length ? Math.round(data.habits.reduce((a,h)=>a+getHabitWeekPct(h),0)/data.habits.length) : 0;
+    const prodScore = Math.round((compRate + habitScore) / 2);
+    const streak = data.habits.length ? Math.max(...data.habits.map(h => getStreak(h))) : 0;
+    statsEl.innerHTML = `
+      <div class="stat-card accent"><div class="stat-label">Task Rate</div><div class="stat-value">${compRate}%</div><div class="stat-sub">completion rate</div></div>
+      <div class="stat-card accent-3"><div class="stat-label">Habit Score</div><div class="stat-value">${habitScore}%</div><div class="stat-sub">7-day avg</div></div>
+      <div class="stat-card accent-2"><div class="stat-label">Prod Score</div><div class="stat-value">${prodScore}%</div><div class="stat-sub">overall score</div></div>
+      <div class="stat-card accent-4"><div class="stat-label">Best Streak</div><div class="stat-value">${streak}d</div><div class="stat-sub">top habit streak</div></div>
+    `;
+  }
+  renderDayPerfChart();
+}
+
+function renderDayPerfChart() {
+  const ctx = document.getElementById('dayPerfChart');
+  if (!ctx) return;
+  // days array: index 0=Mon,1=Tue,...,5=Sat,6=Sun
+  // JS getDay(): 0=Sun,1=Mon,...,6=Sat
+  // Map our index to JS getDay value
+  const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const jsDay = [1, 2, 3, 4, 5, 6, 0]; // Mon=1,Tue=2,...,Sat=6,Sun=0
+
+  const todayJsDay = new Date().getDay(); // JS day of today
+
+  const scores = dayLabels.map((_, i) => {
+    let total = 0, count = 0;
+    for (let w = 0; w < 4; w++) {
+      // How many days ago was this day of week, w weeks back?
+      const targetJsDay = jsDay[i];
+      let daysAgo = ((todayJsDay - targetJsDay) + 7) % 7 + (w * 7);
+      // If daysAgo==0 that means today — only valid when w==0
+      // Avoid including future dates (daysAgo should always be >=0 here, which is correct)
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      const key = toIST(d).toISOString().split('T')[0];
+      const tasksDone = data.tasks.filter(t => t.completedAt && tsToISTDate(t.completedAt) === key).length;
+      const habitsDone = data.habits.filter(h => h.completions[key]).length;
+      total += tasksDone + habitsDone;
+      count++;
+    }
+    return count ? Math.round((total / count) * 10) / 10 : 0;
+  });
+
+  if (dayPerfChart) dayPerfChart.destroy();
+  dayPerfChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: dayLabels,
+      datasets: [{
+        label: 'Avg Performance',
+        data: scores,
+        backgroundColor: 'rgba(124,106,247,0.2)',
+        borderColor: '#7c6af7',
+        pointBackgroundColor: '#7c6af7',
+        borderWidth: 2,
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          grid: { color: '#252535' },
+          ticks: { display: false },
+          pointLabels: { color: '#8888aa', font: { family: 'DM Sans', size: 12 } }
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  // Get date range for dashboard stats
+  const range = getDateRange('dashboard');
+
+  // Helper: filter by IST date of a timestamp
+  const inRange = ts => {
+    if (!range) return true;
+    const d = tsToISTDate(ts);
+    return d >= range.from && d <= range.to;
+  };
+
+  // Task completion rate — within range (use completedAt for completed, createdAt for all)
+  const allTasks = range
+    ? data.tasks.filter(t => inRange(t.createdAt))
+    : data.tasks;
+  const completedTasks = allTasks.filter(t => t.status === 'completed');
+  const compRate = allTasks.length ? Math.round((completedTasks.length / allTasks.length) * 100) : 0;
+
+  // Habit score — average completion % across range days
+  let habitScore = 0;
+  if (data.habits.length) {
+    if (range) {
+      // Build list of days in range
+      const rangeDays = [];
+      const cursor = new Date(range.from + 'T00:00:00+05:30');
+      while (toIST(cursor).toISOString().split('T')[0] <= range.to) {
+        rangeDays.push(toIST(cursor).toISOString().split('T')[0]);
+        cursor.setDate(cursor.getDate() + 1);
+        if (rangeDays.length > 365) break;
+      }
+      habitScore = Math.round(
+        data.habits.reduce((a, h) => {
+          const done = rangeDays.filter(d => h.completions[d]).length;
+          return a + (rangeDays.length ? (done / rangeDays.length) * 100 : 0);
+        }, 0) / data.habits.length
+      );
+    } else {
+      habitScore = Math.round(data.habits.reduce((a,h)=>a+getHabitWeekPct(h),0)/data.habits.length);
+    }
+  }
+
+  // Content done — fully completed content items (use updatedAt or createdAt)
+  const allContent = range
+    ? data.content.filter(c => inRange(c.createdAt))
+    : data.content;
+  const contentDone = allContent.filter(c => getContentPct(c) === 100).length;
+
+  const prodScore = Math.round((compRate + habitScore) / 2);
+
+  // Time tracked — within range
+  const timeInRange = range
+    ? data.timeLog.filter(l => l.date >= range.from && l.date <= range.to)
+    : data.timeLog.filter(l => l.date === today());
+  const totalTime = timeInRange.reduce((a,l)=>a+l.seconds, 0);
+
+  // Update result label
+  updateDateRangeResult('dashboard', allTasks.length, data.tasks.length);
+
+  const periodLabel = range
+    ? (range.from === range.to ? range.from : `${range.from} → ${range.to}`)
+    : 'all time';
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card accent"><div class="stat-label">Task Completion</div><div class="stat-value">${compRate}%</div><div class="stat-sub">${completedTasks.length} of ${allTasks.length} tasks</div></div>
+    <div class="stat-card accent-3"><div class="stat-label">Habit Score</div><div class="stat-value">${habitScore}%</div><div class="stat-sub">${range ? 'period avg' : '7-day avg'}</div></div>
+    <div class="stat-card accent-2"><div class="stat-label">Content Done</div><div class="stat-value">${contentDone}</div><div class="stat-sub">fully produced</div></div>
+    <div class="stat-card accent-4"><div class="stat-label">${range ? 'Period Time' : 'Today Tracked'}</div><div class="stat-value">${formatSeconds(totalTime)}</div><div class="stat-sub">${range ? periodLabel : 'time logged today'}</div></div>
+  `;
+
+  // Today's tasks (pending first, top 5)
+  const dashTasksEl = document.getElementById('dash-tasks');
+  const tasksTodayShow = data.tasks.filter(t=>t.status==='pending').slice(0,5);
+  if (!tasksTodayShow.length) {
+    dashTasksEl.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="empty-text">No pending tasks 🎉</div></div>';
+  } else {
+    dashTasksEl.innerHTML = tasksTodayShow.map(t => `
+      <div class="task-item ${t.status==='completed'?'completed':''}" style="cursor:default;">
+        <div class="task-check ${t.status==='completed'?'checked':''}" onclick="toggleTask('${t.id}',event)"></div>
+        <div class="task-content">
+          <div class="task-title">${t.title}</div>
+          <div class="task-meta">
+            <span class="tag tag-${t.priority}">${t.priority}</span>
+            ${t.deadline ? `<span class="tag tag-date">📅 ${t.deadline}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Today's habits
+  const dashHabitsEl = document.getElementById('dash-habits');
+  document.getElementById('dash-habit-date').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long', month:'short', day:'numeric', timeZone:'Asia/Kolkata'});
+  if (!data.habits.length) {
+    dashHabitsEl.innerHTML = '<div class="empty-state" style="padding:16px;"><div class="empty-text">No habits tracked</div></div>';
+  } else {
+    dashHabitsEl.innerHTML = data.habits.map(h => {
+      const done = h.completions[today()];
+      return `
+        <div class="habit-item" style="padding:10px 14px;">
+          <div class="habit-check-today ${done?'done':''}" onclick="toggleHabitToday('${h.id}')" style="width:26px;height:26px;font-size:12px;">${done?'✓':'○'}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:500;">${h.name}</div>
+            <div style="font-size:11px;color:var(--text-dim);">🔥 ${getStreak(h)} day streak</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Insights
+  const insights = generateInsights();
+  document.getElementById('dash-insights').innerHTML = insights.slice(0,4).map(i => `<div class="insight-item ${i.type}">${i.text}</div>`).join('');
+
+  // Heatmap
+  renderHeatmap();
+  renderProdChart();
+  renderTimeChart();
+}
+
+function renderHeatmap() {
+  const el = document.getElementById('dash-heatmap');
+  if (!el) return;
+  const cells = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = toIST(d).toISOString().split('T')[0];
+    const tasksDone = data.tasks.filter(t => t.completedAt && tsToISTDate(t.completedAt) === key).length;
+    const habitsDone = data.habits.filter(h => h.completions[key]).length;
+    const score = tasksDone + habitsDone;
+    const level = score === 0 ? 0 : score <= 1 ? 1 : score <= 3 ? 2 : score <= 5 ? 3 : 4;
+    cells.push(`<div class="heatmap-cell" data-level="${level}" title="${key}: ${score} activities"></div>`);
+  }
+  el.innerHTML = cells.join('');
+}
+
+function renderProdChart() {
+  const ctx = document.getElementById('prodChart');
+  if (!ctx) return;
+  const days = dashChartMode === 'week' ? 7 : 30;
+  const labels = [];
+  const taskData = [];
+  const habitData = [];
+  for (let i = days-1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = toIST(d).toISOString().split('T')[0];
+    labels.push(toIST(d).toLocaleDateString('en-IN', dashChartMode==='week'?{weekday:'short'}:{day:'numeric',month:'short'}));
+    taskData.push(data.tasks.filter(t => t.completedAt && tsToISTDate(t.completedAt) === key).length);
+    const hDone = data.habits.filter(h => h.completions[key]).length;
+    habitData.push(data.habits.length ? Math.round((hDone/data.habits.length)*100) : 0);
+  }
+  if (prodChart) prodChart.destroy();
+  prodChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Tasks Done', data: taskData, borderColor: '#7c6af7', backgroundColor: 'rgba(124,106,247,0.1)', tension: 0.4, fill: true, pointRadius: 3 },
+        { label: 'Habit %', data: habitData, borderColor: '#6af7c4', backgroundColor: 'rgba(106,247,196,0.05)', tension: 0.4, fill: false, pointRadius: 3, yAxisID: 'y2' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8888aa', font: { family: 'DM Sans' }, boxWidth: 12 } } },
+      scales: {
+        y: { grid: { color: '#252535' }, ticks: { color: '#8888aa' }, beginAtZero: true },
+        y2: { position: 'right', grid: { display: false }, ticks: { color: '#8888aa', callback: v => v + '%' }, beginAtZero: true, max: 100 },
+        x: { grid: { display: false }, ticks: { color: '#8888aa' } }
+      }
+    }
+  });
+}
+
+function renderTimeChart() {
+  const ctx = document.getElementById('timeChart');
+  if (!ctx) return;
+  const catMap = {};
+  data.timeLog.forEach(l => {
+    const task = data.tasks.find(t => t.id === l.taskId);
+    const cat = task ? (getCatById(task.categoryId)?.name || 'Uncategorized') : 'Uncategorized';
+    catMap[cat] = (catMap[cat] || 0) + l.seconds;
+  });
+  const labels = Object.keys(catMap);
+  const values = labels.map(k => Math.round(catMap[k]/60));
+  const colors = labels.map((_,i) => CAT_COLORS[i % CAT_COLORS.length]);
+  if (timeChart) timeChart.destroy();
+  if (!labels.length) { ctx.parentElement.innerHTML = '<div class="empty-state"><div class="empty-text">No time data yet</div></div>'; return; }
+  timeChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors.map(c => c + '99'), borderColor: colors, borderWidth: 1 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#8888aa', font: { family: 'DM Sans' }, boxWidth: 12, padding: 12 } },
+        tooltip: { callbacks: { label: c => `${c.label}: ${c.raw}m` } }
+      }
+    }
+  });
+}
+
+function switchDashChart(mode, el) {
+  dashChartMode = mode;
+  document.querySelectorAll('#dash-chart-tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderProdChart();
+}
+
+function renderCatChart() {
+  const ctx = document.getElementById('catChart');
+  if (!ctx) return;
+  const labels = data.categories.map(c => c.name);
+  const taskCounts = data.categories.map(c => data.tasks.filter(t=>t.categoryId===c.id).length);
+  const colors = data.categories.map(c => c.color);
+  if (catChart) catChart.destroy();
+  catChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: 'Tasks', data: taskCounts, backgroundColor: colors.map(c=>c+'66'), borderColor: colors, borderWidth: 2, borderRadius: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: '#252535' }, ticks: { color: '#8888aa' }, beginAtZero: true },
+        x: { grid: { display: false }, ticks: { color: '#8888aa' } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// DATA MANAGEMENT
+// ============================================================
+function renderData() {
+  const size = new Blob([JSON.stringify(data)]).size;
+  document.getElementById('storage-info').innerHTML = `
+    Tasks: ${data.tasks.length}<br>
+    Habits: ${data.habits.length}<br>
+    Content Items: ${data.content.length}<br>
+    Activity Logs: ${data.activityLog.length}<br>
+    Categories: ${data.categories.length}<br>
+    Goals: ${data.goals.length}<br>
+    Time Logs: ${data.timeLog.length}<br>
+    Storage Used: ~${Math.round(size/1024)} KB
+  `;
+}
+
+function _csvEsc(v) {
+  const s = (v === null || v === undefined) ? '' : String(v);
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+function _toCSV(rows) {
+  return rows.map(r => r.map(_csvEsc).join(',')).join('\r\n');
+}
+function _downloadCSV(filename, csv) {
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV(module) {
+  let rows = [];
+  let filename = '';
+  if (module === 'tasks') {
+    filename = 'flowos-tasks-' + today() + '.csv';
+    rows.push(['ID','Title','Priority','Category','Status','Deadline','Recurring','Notes','Subtasks','TimeSpent_sec','CreatedAt','CompletedAt']);
+    data.tasks.forEach(t => {
+      const cat = getCatById(t.categoryId);
+      const subtasks = (t.subtasks||[]).map(s => (s.done?'[x] ':'[ ] ') + s.title).join(' | ');
+      rows.push([t.id, t.title, t.priority, cat?.name||'', t.status, t.deadline||'', t.recurring||'none', t.notes||'', subtasks, t.timeSpent||0, new Date(t.createdAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}), t.completedAt ? new Date(t.completedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}) : '']);
+    });
+  } else if (module === 'habits') {
+    filename = 'flowos-habits-' + today() + '.csv';
+    rows.push(['ID','Name','Category','Target_days_per_week','Description','Streak','WeekPct','CreatedAt']);
+    data.habits.forEach(h => {
+      rows.push([h.id, h.name, h.category, h.target||7, h.desc||'', getStreak(h), getHabitWeekPct(h), new Date(h.createdAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})]);
+    });
+  } else if (module === 'content') {
+    filename = 'flowos-content-' + today() + '.csv';
+    rows.push(['ID','Title','Category','Deadline','Hook','Notes','Progress_pct','Stages_Done','StageNotes','CreatedAt']);
+    data.content.forEach(c => {
+      const stagesDone = STAGES.filter(s => c.stages?.[s]).join(' | ');
+      const stageNotes = STAGES.map(s => c.stageNotes?.[s] ? s + ': ' + c.stageNotes[s] : '').filter(Boolean).join(' || ');
+      rows.push([c.id, c.title, c.category, c.deadline||'', c.hook||'', c.notes||'', getContentPct(c), stagesDone, stageNotes, new Date(c.createdAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})]);
+    });
+  } else if (module === 'goals') {
+    filename = 'flowos-goals-' + today() + '.csv';
+    rows.push(['ID','Title','Period','Type','Target','Unit','CurrentProgress','CreatedAt']);
+    data.goals.forEach(g => {
+      rows.push([g.id, g.title, g.period, g.type, g.target, g.unit||'', getGoalProgress(g), new Date(g.createdAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})]);
+    });
+  } else if (module === 'timelog') {
+    filename = 'flowos-timelog-' + today() + '.csv';
+    rows.push(['ID','TaskTitle','Seconds','Date']);
+    data.timeLog.forEach(l => {
+      rows.push([l.id, l.taskTitle||'Manual', l.seconds, l.date]);
+    });
+  }
+  if (rows.length > 1) {
+    _downloadCSV(filename, _toCSV(rows));
+    toast((module.charAt(0).toUpperCase()+module.slice(1)) + ' CSV exported!', 'success');
+  } else {
+    toast('No data to export', 'warn');
+  }
+}
+
+function _parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuote && line[i+1] === '"') { cur += '"'; i++; }
+      else { inQuote = !inQuote; }
+    } else if (ch === ',' && !inQuote) {
+      result.push(cur); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function importCSV(input) {
+  const module = document.getElementById('import-csv-module').value;
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const lines = e.target.result.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
+      if (lines.length < 2) { toast('CSV has no data rows', 'warn'); return; }
+      const headers = _parseCSVLine(lines[0]);
+      const rows = lines.slice(1).map(l => _parseCSVLine(l));
+      let imported = 0;
+
+      if (module === 'tasks') {
+        rows.forEach(r => {
+          if (!r[1]) return; // must have title
+          const catName = r[3] || '';
+          let catId = data.categories.find(c => c.name === catName)?.id || '';
+          if (!catId && catName) {
+            const nc = { id: uid(), name: catName, color: CAT_COLORS[data.categories.length % CAT_COLORS.length] };
+            data.categories.push(nc); catId = nc.id;
+          }
+          const id = r[0] || uid();
+          if (!data.tasks.find(t => t.id === id)) {
+            data.tasks.push({ id, title: r[1], priority: r[2]||'medium', categoryId: catId, status: r[4]||'pending', deadline: r[5]||'', recurring: r[6]||'none', notes: r[7]||'', subtasks: [], timeSpent: parseInt(r[9])||0, createdAt: Date.now() });
+            imported++;
+          }
+        });
+      } else if (module === 'habits') {
+        rows.forEach(r => {
+          if (!r[1]) return;
+          const id = r[0] || uid();
+          if (!data.habits.find(h => h.id === id)) {
+            data.habits.push({ id, name: r[1], category: r[2]||'Health', target: parseInt(r[3])||7, desc: r[4]||'', completions: {}, createdAt: Date.now() });
+            imported++;
+          }
+        });
+      } else if (module === 'content') {
+        rows.forEach(r => {
+          if (!r[1]) return;
+          const id = r[0] || uid();
+          if (!data.content.find(c => c.id === id)) {
+            const stagesDoneList = (r[7]||'').split('|').map(s=>s.trim()).filter(Boolean);
+            const stages = {};
+            STAGES.forEach(s => { stages[s] = stagesDoneList.includes(s); });
+            data.content.push({ id, title: r[1], category: r[2]||'YouTube', deadline: r[3]||'', hook: r[4]||'', notes: r[5]||'', stages, stageNotes: {}, createdAt: Date.now(), timeSpent: 0 });
+            imported++;
+          }
+        });
+      } else if (module === 'goals') {
+        rows.forEach(r => {
+          if (!r[1]) return;
+          const id = r[0] || uid();
+          if (!data.goals.find(g => g.id === id)) {
+            data.goals.push({ id, title: r[1], period: r[2]||'daily', type: r[3]||'tasks', target: parseFloat(r[4])||1, unit: r[5]||'', createdAt: Date.now() });
+            imported++;
+          }
+        });
+      }
+
+      save(); updateCategorySelects();
+      toast('Imported ' + imported + ' ' + module + ' records!', 'success');
+      input.value = '';
+    } catch(err) {
+      toast('Import error: ' + err.message, 'error');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function confirmReset() {
+  if (!confirm('⚠️ This will delete ALL data permanently. Are you absolutely sure?')) return;
+  if (!confirm('Last chance — delete everything?')) return;
+  const savedPasscode = data.settings?.passcode || '1234';
+  data = { tasks:[], habits:[], content:[], goals:[], categories:[{id:'cat1',name:'Work',color:'#7c6af7'},{id:'cat2',name:'Personal',color:'#f7a66a'},{id:'cat3',name:'Health',color:'#6af7c4'},{id:'cat4',name:'Learning',color:'#f76a8a'}], timeLog:[], activityLog:[], settings:{ passcode: savedPasscode } };
+  save();
+  renderDashboard();
+  toast('All data reset', 'info');
+}
+
+// ============================================================
+// QUICK ADD
+// ============================================================
+let quickTab = 'task';
+function quickAdd() {
+  document.getElementById('qt-cat').innerHTML = getCatOptions();
+  openModal('quick-modal');
+}
+function switchQuickTab(tab, el) {
+  quickTab = tab;
+  document.querySelectorAll('#quick-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('quick-task-form').style.display = tab==='task'?'flex':'none';
+  document.getElementById('quick-habit-form').style.display = tab==='habit'?'flex':'none';
+  document.getElementById('quick-content-form').style.display = tab==='content'?'flex':'none';
+}
+function saveQuick() {
+  if (quickTab === 'task') {
+    const title = document.getElementById('qt-title').value.trim();
+    if (!title) { toast('Enter a title','warn'); return; }
+    data.tasks.unshift({ id:uid(), title, priority:document.getElementById('qt-priority').value, categoryId:document.getElementById('qt-cat').value, deadline:document.getElementById('qt-deadline').value, status:'pending', subtasks:[], timeSpent:0, createdAt:Date.now() });
+    logActivity('task', `Added task: "${title}"`);
+    document.getElementById('qt-title').value = '';
+  } else if (quickTab === 'habit') {
+    const name = document.getElementById('qh-name').value.trim();
+    if (!name) { toast('Enter a habit name','warn'); return; }
+    data.habits.push({ id:uid(), name, category:document.getElementById('qh-cat').value, target:7, completions:{}, createdAt:Date.now() });
+    logActivity('habit', `Added habit: "${name}"`);
+    document.getElementById('qh-name').value = '';
+  } else if (quickTab === 'content') {
+    const title = document.getElementById('qc-title').value.trim();
+    if (!title) { toast('Enter a title','warn'); return; }
+    data.content.unshift({ id:uid(), title, category:document.getElementById('qc-type').value, stages:{}, timeSpent:0, createdAt:Date.now() });
+    logActivity('content', `Added content: "${title}"`);
+    document.getElementById('qc-title').value = '';
+  }
+  save();
+  closeModal('quick-modal');
+  updateBadges();
+  toast('Added!', 'success');
+}
+
+// ============================================================
+// RECURRING TASKS
+// ============================================================
+function processRecurring() {
+  const t = today();
+  data.tasks.forEach(task => {
+    if (task.recurring === 'none' || !task.recurring) return;
+    if (task.status !== 'completed') return;
+    if (task.lastRecurDate === t) return;
+    const completedDate = new Date(task.completedAt);
+    const now = new Date();
+    let shouldRecur = false;
+    if (task.recurring === 'daily') {
+      shouldRecur = tsToISTDate(task.completedAt) < t;
+    } else if (task.recurring === 'weekly') {
+      const daysDiff = Math.floor((now - completedDate) / (1000*60*60*24));
+      shouldRecur = daysDiff >= 7;
+    }
+    if (shouldRecur) {
+      task.status = 'pending';
+      task.completedAt = null;
+      task.lastRecurDate = t;
+      logActivity('task', `Recurring task reset: "${task.title}"`);
+    }
+  });
+  save();
+}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    quickAdd();
+  }
+});
+
+// ✅ Expose all functions called from inline HTML attributes
+// Required because type="module" creates a closed scope
+Object.assign(window, {
+  // Navigation
+  showPage, toggleSidebar, closeSidebar, quickAdd, switchQuickTab, saveQuick,
+  // Modals
+  closeModal, openModal,
+  // Passcode
+  pcPress, pcCancel, requirePasscode, changePasscode,
+  // Categories
+  openCategoryModal, saveCategory, deleteCategory, selectColor, inlineAddCat, inlineAddHabitCat,
+  // Tasks
+  openTaskModal, saveTask, deleteTask, toggleTask, toggleSubtask, addSubtaskToForm, removeSubtask, toggleTaskTimer,
+  // Habits
+  openHabitModal, saveHabit, deleteHabit, toggleHabitToday,
+  // Content
+  openContentModal, saveContent, deleteContent, toggleContentStage, openStageNote, saveStageNote, _openInlineStageNote,
+  // Goals
+  openGoalModal, saveGoal, deleteGoal, switchGoalTab,
+  // Time Tracking
+  startGlobalTimer, stopGlobalTimer,
+  // Dashboard & Charts
+  renderDashboard, switchDashChart, setDateFilter,
+  // Pages
+  renderTasks, renderHabits, renderContent, renderGoals, renderHistory,
+  // Data
+  exportCSV, importCSV, confirmReset,
+  // Stage notes
+  openStageNote, saveStageNote,
+});
+
+// ============================================================
+// INIT
+// ============================================================
+// ✏️ Modified: init() is now async to await Firestore load
+async function init() {
+  // ✅ Show loading overlay while Firestore fetches data
+  const overlay = document.createElement('div');
+  overlay.id = 'fb-loading';
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:var(--bg-base);z-index:9998;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  `;
+  overlay.innerHTML = `
+    <div style="width:40px;height:40px;border:3px solid var(--border-bright);border-top-color:var(--accent);
+      border-radius:50%;animation:fbspin 0.8s linear infinite;"></div>
+    <div style="font-family:var(--font-mono);font-size:13px;color:var(--text-secondary);">Connecting to Firestore…</div>
+    <style>@keyframes fbspin{to{transform:rotate(360deg);}}</style>
+  `;
+  document.body.appendChild(overlay);
+
+  // ✅ Await Firestore data before any rendering
+  await load();
+
+  // Remove loading overlay
+  overlay.remove();
+
+  processRecurring();
+  updateBadges();
+  updateCategorySelects();
+  startClock();
+  renderDashboard();
+  // Keyboard shortcut hint
+  setTimeout(() => toast('Tip: Press Ctrl+K for quick add', 'info'), 1500);
+}
+
+init();
+</script>
+</body>
+</html>
