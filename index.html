@@ -831,6 +831,37 @@ select option { background: var(--bg-card); }
   font-size: 11px;
   color: var(--text-dim);
 }
+
+/* ======================== JOURNAL ======================== */
+.journal-write-area { display: flex; flex-direction: column; gap: 12px; }
+.journal-date-display { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
+.journal-date-sub { font-size: 12px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+.journal-mood-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mood-btn { background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer; font-size: 20px; transition: all var(--transition); user-select: none; }
+.mood-btn:hover { transform: scale(1.15); border-color: var(--accent); }
+.mood-btn.selected { background: var(--accent-dim); border-color: var(--accent); transform: scale(1.1); box-shadow: 0 0 12px var(--accent-dim); }
+.journal-textarea { width: 100%; min-height: 220px; resize: vertical; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 14px; font-family: var(--font-body); color: var(--text-primary); line-height: 1.8; outline: none; transition: border-color var(--transition); }
+.journal-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.journal-textarea::placeholder { color: var(--text-dim); font-style: italic; }
+.journal-tag-input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.journal-tag { background: var(--accent-dim); color: var(--accent); font-family: var(--font-mono); font-size: 10px; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--accent); }
+.journal-tag .rm { cursor: pointer; opacity: 0.6; }
+.journal-tag .rm:hover { opacity: 1; }
+.journal-entries { display: flex; flex-direction: column; gap: 14px; }
+.journal-entry-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: all var(--transition); position: relative; }
+.journal-entry-card:hover { border-color: var(--border-bright); }
+.journal-entry-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; background: var(--accent); }
+.journal-entry-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.journal-entry-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+.journal-entry-mood { font-size: 20px; }
+.journal-entry-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
+.journal-entry-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.journal-entry-actions { opacity: 0; transition: opacity var(--transition); display: flex; gap: 4px; margin-left: auto; }
+.journal-entry-card:hover .journal-entry-actions { opacity: 1; }
+.journal-view-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
+.journal-search { flex: 1; min-width: 160px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); padding: 6px 10px; font-size: 12px; outline: none; }
+.journal-search:focus { border-color: var(--accent); }
+.journal-word-count { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 4px; text-align: right; }
 </style>
 </head>
 <body>
@@ -870,6 +901,9 @@ select option { background: var(--bg-card); }
   </div>
   <div class="nav-item" onclick="showPage('timetracking')">
     <span class="icon">⏱</span> Time Tracking
+  </div>
+  <div class="nav-item" onclick="showPage('journal')">
+    <span class="icon">📓</span> Journal
   </div>
   
   <div class="nav-section">System</div>
@@ -1258,6 +1292,75 @@ select option { background: var(--bg-card); }
       </div>
     </div>
 
+    <!-- ===================== JOURNAL PAGE ===================== -->
+    <div id="page-journal" class="page">
+
+      <!-- Write Today's Entry -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="journal-date-display" id="journal-today-label">Today</div>
+            <div class="journal-date-sub" id="journal-today-sub"></div>
+          </div>
+          <button class="btn btn-primary" onclick="saveJournalEntry()">💾 Save Entry</button>
+        </div>
+        <div class="journal-write-area">
+          <!-- Mood -->
+          <div>
+            <div class="form-label" style="margin-bottom:8px;">How are you feeling?</div>
+            <div class="journal-mood-bar" id="journal-mood-bar">
+              <span class="mood-btn" data-mood="😄" onclick="selectMood('😄',this)" title="Happy">😄</span>
+              <span class="mood-btn" data-mood="😊" onclick="selectMood('😊',this)" title="Good">😊</span>
+              <span class="mood-btn" data-mood="😐" onclick="selectMood('😐',this)" title="Neutral">😐</span>
+              <span class="mood-btn" data-mood="😔" onclick="selectMood('😔',this)" title="Sad">😔</span>
+              <span class="mood-btn" data-mood="😤" onclick="selectMood('😤',this)" title="Frustrated">😤</span>
+              <span class="mood-btn" data-mood="😴" onclick="selectMood('😴',this)" title="Tired">😴</span>
+              <span class="mood-btn" data-mood="🤩" onclick="selectMood('🤩',this)" title="Excited">🤩</span>
+              <span class="mood-btn" data-mood="😰" onclick="selectMood('😰',this)" title="Anxious">😰</span>
+              <span class="mood-btn" data-mood="🙏" onclick="selectMood('🙏',this)" title="Grateful">🙏</span>
+              <span class="mood-btn" data-mood="💪" onclick="selectMood('💪',this)" title="Motivated">💪</span>
+            </div>
+          </div>
+          <!-- Entry text -->
+          <div>
+            <textarea class="journal-textarea" id="journal-text-input"
+              placeholder="What happened today? What are you thinking about? What went well? What could be better?&#10;&#10;Write freely — this is your space..."
+              oninput="updateJournalWordCount()"></textarea>
+            <div class="journal-word-count" id="journal-word-count">0 words</div>
+          </div>
+          <!-- Tags -->
+          <div>
+            <div class="form-label" style="margin-bottom:6px;">Tags</div>
+            <div class="journal-tag-input-row">
+              <input type="text" id="journal-tag-input" placeholder="Add tag, press Enter..." style="width:200px;font-size:12px;padding:6px 10px;" onkeydown="if(event.key==='Enter'){event.preventDefault();addJournalTag();}">
+              <button class="btn btn-secondary btn-sm" onclick="addJournalTag()">+ Tag</button>
+              <div id="journal-tags-display" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View / Filter past entries -->
+      <div class="journal-view-bar" id="journal-view-bar">
+        <span class="date-range-label">📅 View:</span>
+        <div class="date-pill active" onclick="setJournalView('all',this)">All</div>
+        <div class="date-pill" onclick="setJournalView('today',this)">Today</div>
+        <div class="date-pill" onclick="setJournalView('week',this)">This Week</div>
+        <div class="date-pill" onclick="setJournalView('month',this)">This Month</div>
+        <div class="date-pill" onclick="setJournalView('custom',this)">Custom</div>
+        <div id="journal-custom-range" style="display:none;gap:6px;align-items:center;flex-wrap:wrap;display:none;">
+          <input type="date" id="journal-date-from" class="date-range-custom" style="width:auto;" onchange="renderJournal()">
+          <span class="date-range-separator">→</span>
+          <input type="date" id="journal-date-to" class="date-range-custom" style="width:auto;" onchange="renderJournal()">
+        </div>
+        <input type="text" class="journal-search" id="journal-search" placeholder="🔍 Search entries..." oninput="renderJournal()">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);" id="journal-count"></div>
+      </div>
+
+      <!-- Entries list -->
+      <div class="journal-entries" id="journal-entries-list"></div>
+    </div>
+
   </div><!-- /content-area -->
 </div><!-- /main -->
 
@@ -1555,7 +1658,11 @@ select option { background: var(--bg-card); }
 <div id="passcode-overlay" style="display:none;" class="passcode-overlay">
   <div class="passcode-box">
     <div class="passcode-title">🔐 Passcode Required</div>
-    <div class="passcode-hint">Enter your passcode to continue</div>
+    <div class="passcode-hint">Type on keyboard or tap the numpad</div>
+    <!-- Hidden input captures keyboard typing -->
+    <input type="tel" id="pc-keyboard-input" maxlength="8"
+      style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;"
+      oninput="pcKeyboardInput(this.value)" onblur="this.focus()">
     <div class="passcode-dots" id="pc-dots">
       <div class="passcode-dot"></div>
       <div class="passcode-dot"></div>
@@ -1644,6 +1751,7 @@ let data = {
   habits: [],
   content: [],
   goals: [],
+  journals: [],
   categories: [
     {id:'cat1',name:'Work',color:'#7c6af7'},
     {id:'cat2',name:'Personal',color:'#f7a66a'},
@@ -1880,6 +1988,7 @@ const pageTitles = {
   content: 'Content Pipeline',
   goals: 'Goals',
   timetracking: 'Time Tracking',
+  journal: '📓 Daily Journal',
   history: 'History & Logs',
   categories: 'Categories',
   insights: 'Smart Insights',
@@ -1905,6 +2014,7 @@ function renderPage(name) {
   else if (name === 'content') renderContent();
   else if (name === 'goals') renderGoals();
   else if (name === 'timetracking') renderTimeTracking();
+  else if (name === 'journal') renderJournal();
   else if (name === 'history') renderHistory();
   else if (name === 'categories') renderCategories();
   else if (name === 'insights') renderInsights();
@@ -2064,6 +2174,23 @@ function requirePasscode(callback) {
   _renderPcDots();
   document.getElementById('pc-error').textContent = '';
   document.getElementById('passcode-overlay').style.display = 'flex';
+  // Focus hidden input so keyboard works immediately
+  const ki = document.getElementById('pc-keyboard-input');
+  if (ki) { ki.value = ''; setTimeout(() => ki.focus(), 50); }
+}
+
+// Called by the hidden input's oninput — syncs keyboard typing into passcode buffer
+function pcKeyboardInput(val) {
+  // Only keep digits
+  const digits = val.replace(/\D/g, '');
+  const ki = document.getElementById('pc-keyboard-input');
+  if (ki) ki.value = digits; // keep field clean
+  // Rebuild buffer from clean digits
+  _pcBuffer = digits.slice(0, 8);
+  _renderPcDots();
+  if (_pcBuffer.length >= data.settings.passcode.length) {
+    setTimeout(_pcCheck, 150);
+  }
 }
 
 function pcPress(key) {
@@ -2081,11 +2208,15 @@ function pcPress(key) {
 function _pcCheck() {
   if (_pcBuffer === data.settings.passcode) {
     document.getElementById('passcode-overlay').style.display = 'none';
+    const ki = document.getElementById('pc-keyboard-input');
+    if (ki) ki.value = '';
     _pcBuffer = '';
     if (_pcCallback) _pcCallback();
     _pcCallback = null;
   } else {
     document.getElementById('pc-error').textContent = 'Incorrect passcode. Try again.';
+    const ki = document.getElementById('pc-keyboard-input');
+    if (ki) { ki.value = ''; setTimeout(() => ki.focus(), 50); }
     _pcBuffer = '';
     _renderPcDots();
   }
@@ -2101,6 +2232,8 @@ function _renderPcDots() {
 
 function pcCancel() {
   document.getElementById('passcode-overlay').style.display = 'none';
+  const ki = document.getElementById('pc-keyboard-input');
+  if (ki) ki.value = '';
   _pcBuffer = '';
   _pcCallback = null;
 }
@@ -3728,6 +3861,255 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ============================================================
+// JOURNAL MODULE
+// ============================================================
+let _journalMood = '';
+let _journalTags = [];
+let _journalViewMode = 'all';
+let _editingJournalId = null;
+
+function renderJournal() {
+  // Update today's date header
+  const now = new Date();
+  const todayIST = toIST(now);
+  const labelEl = document.getElementById('journal-today-label');
+  const subEl   = document.getElementById('journal-today-sub');
+  if (labelEl) labelEl.textContent = todayIST.toLocaleDateString('en-IN', {
+    timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+  if (subEl) subEl.textContent = today() + ' · IST';
+
+  // If editing an existing entry, pre-fill the write area
+  if (_editingJournalId) {
+    const ej = data.journals.find(j => j.id === _editingJournalId);
+    if (ej) {
+      const ta = document.getElementById('journal-text-input');
+      if (ta) ta.value = ej.text;
+      _journalMood = ej.mood || '';
+      _journalTags = [...(ej.tags || [])];
+      _refreshMoodButtons();
+      _refreshTagsDisplay();
+      updateJournalWordCount();
+    }
+  }
+
+  _renderJournalEntries();
+}
+
+function _renderJournalEntries() {
+  const search = (document.getElementById('journal-search')?.value || '').toLowerCase();
+  const countEl = document.getElementById('journal-count');
+
+  let entries = [...(data.journals || [])].sort((a, b) => b.ts - a.ts);
+
+  // Apply view mode filter
+  const t = today();
+  if (_journalViewMode === 'today') {
+    entries = entries.filter(e => e.date === t);
+  } else if (_journalViewMode === 'week') {
+    const weekDays = getLast7Days();
+    entries = entries.filter(e => weekDays.includes(e.date));
+  } else if (_journalViewMode === 'month') {
+    const monthStart = t.slice(0, 7) + '-01';
+    entries = entries.filter(e => e.date >= monthStart && e.date <= t);
+  } else if (_journalViewMode === 'custom') {
+    const from = document.getElementById('journal-date-from')?.value || '';
+    const to   = document.getElementById('journal-date-to')?.value   || '';
+    if (from) entries = entries.filter(e => e.date >= from);
+    if (to)   entries = entries.filter(e => e.date <= to);
+  }
+
+  // Apply text search
+  if (search) {
+    entries = entries.filter(e =>
+      e.text.toLowerCase().includes(search) ||
+      (e.tags || []).some(t => t.toLowerCase().includes(search))
+    );
+  }
+
+  if (countEl) countEl.textContent = entries.length + ' entr' + (entries.length === 1 ? 'y' : 'ies');
+
+  const el = document.getElementById('journal-entries-list');
+  if (!el) return;
+
+  if (!entries.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📓</div><div class="empty-text">${search || _journalViewMode !== 'all' ? 'No entries match your filter' : 'No journal entries yet — write your first one above!'}</div></div>`;
+    return;
+  }
+
+  el.innerHTML = entries.map(e => {
+    const dateObj = new Date(e.date + 'T00:00:00+05:30');
+    const dateLabel = dateObj.toLocaleDateString('en-IN', {
+      timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+    const wordCount = e.text.trim().split(/\s+/).filter(Boolean).length;
+    const preview = e.text.length > 400 ? e.text.slice(0, 400) + '…' : e.text;
+    const tagsHtml = (e.tags || []).map(t =>
+      `<span class="journal-tag">${t}</span>`
+    ).join('');
+    const isEditing = _editingJournalId === e.id;
+
+    return `<div class="journal-entry-card" style="${isEditing ? 'border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim);' : ''}">
+      <div class="journal-entry-header">
+        ${e.mood ? `<span class="journal-entry-mood">${e.mood}</span>` : ''}
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--text-primary);">${dateLabel}</div>
+          <div class="journal-entry-date">${e.date} · ${e.time || ''} · ${wordCount} words</div>
+        </div>
+        <div class="journal-entry-actions">
+          <button class="task-action-btn" onclick="editJournalEntry('${e.id}')" title="Edit">✏️</button>
+          <button class="task-action-btn" onclick="deleteJournalEntry('${e.id}')" title="Delete">🗑️</button>
+        </div>
+      </div>
+      <div class="journal-entry-body">${preview.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      ${tagsHtml ? `<div class="journal-entry-tags">${tagsHtml}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function saveJournalEntry() {
+  const text = (document.getElementById('journal-text-input')?.value || '').trim();
+  if (!text) { toast('Write something before saving', 'warn'); return; }
+
+  if (_editingJournalId) {
+    // Update existing entry
+    const idx = data.journals.findIndex(j => j.id === _editingJournalId);
+    if (idx !== -1) {
+      data.journals[idx].text  = text;
+      data.journals[idx].mood  = _journalMood;
+      data.journals[idx].tags  = [..._journalTags];
+      data.journals[idx].editedAt = Date.now();
+    }
+    _editingJournalId = null;
+    toast('Entry updated!', 'success');
+  } else {
+    // Save new entry
+    const entry = {
+      id: uid(),
+      date: today(),
+      time: nowStr(),
+      ts: Date.now(),
+      text,
+      mood: _journalMood,
+      tags: [..._journalTags]
+    };
+    if (!data.journals) data.journals = [];
+    data.journals.unshift(entry);
+    logActivity('journal', `Journal entry written (${text.trim().split(/\s+/).filter(Boolean).length} words)`);
+    toast('Journal saved!', 'success');
+  }
+
+  save();
+
+  // Reset write area
+  const ta = document.getElementById('journal-text-input');
+  if (ta) ta.value = '';
+  _journalMood = '';
+  _journalTags = [];
+  _refreshMoodButtons();
+  _refreshTagsDisplay();
+  updateJournalWordCount();
+  _renderJournalEntries();
+}
+
+function editJournalEntry(id) {
+  requirePasscode(() => {
+    _editingJournalId = id;
+    const e = data.journals.find(j => j.id === id);
+    if (!e) return;
+    const ta = document.getElementById('journal-text-input');
+    if (ta) { ta.value = e.text; ta.focus(); ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    _journalMood = e.mood || '';
+    _journalTags = [...(e.tags || [])];
+    _refreshMoodButtons();
+    _refreshTagsDisplay();
+    updateJournalWordCount();
+    // Update save button label
+    const saveBtn = document.querySelector('#page-journal .btn-primary');
+    if (saveBtn) saveBtn.textContent = '💾 Update Entry';
+    _renderJournalEntries();
+    toast('Editing entry — make changes and Save', 'info');
+  });
+}
+
+function deleteJournalEntry(id) {
+  requirePasscode(() => {
+    if (!confirm('Delete this journal entry permanently?')) return;
+    data.journals = data.journals.filter(j => j.id !== id);
+    if (_editingJournalId === id) {
+      _editingJournalId = null;
+      const ta = document.getElementById('journal-text-input');
+      if (ta) ta.value = '';
+      _journalMood = '';
+      _journalTags = [];
+      _refreshMoodButtons();
+      _refreshTagsDisplay();
+      updateJournalWordCount();
+      const saveBtn = document.querySelector('#page-journal .btn-primary');
+      if (saveBtn) saveBtn.textContent = '💾 Save Entry';
+    }
+    save();
+    _renderJournalEntries();
+    toast('Entry deleted', 'info');
+  });
+}
+
+function selectMood(mood, el) {
+  _journalMood = (_journalMood === mood) ? '' : mood; // toggle
+  _refreshMoodButtons();
+}
+
+function _refreshMoodButtons() {
+  document.querySelectorAll('.mood-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.mood === _journalMood);
+  });
+}
+
+function addJournalTag() {
+  const inp = document.getElementById('journal-tag-input');
+  const val = (inp?.value || '').trim().toLowerCase().replace(/\s+/g, '-');
+  if (!val) return;
+  if (!_journalTags.includes(val)) _journalTags.push(val);
+  if (inp) inp.value = '';
+  _refreshTagsDisplay();
+}
+
+function removeJournalTag(tag) {
+  _journalTags = _journalTags.filter(t => t !== tag);
+  _refreshTagsDisplay();
+}
+
+function _refreshTagsDisplay() {
+  const el = document.getElementById('journal-tags-display');
+  if (!el) return;
+  el.innerHTML = _journalTags.map(t =>
+    `<span class="journal-tag">${t} <span class="rm" onclick="removeJournalTag('${t}')">✕</span></span>`
+  ).join('');
+}
+
+function updateJournalWordCount() {
+  const ta = document.getElementById('journal-text-input');
+  const el = document.getElementById('journal-word-count');
+  if (!ta || !el) return;
+  const words = ta.value.trim().split(/\s+/).filter(Boolean).length;
+  const chars = ta.value.length;
+  el.textContent = `${words} word${words !== 1 ? 's' : ''} · ${chars} characters`;
+}
+
+function setJournalView(mode, pill) {
+  _journalViewMode = mode;
+  // Update pill states
+  document.querySelectorAll('#journal-view-bar .date-pill').forEach(p =>
+    p.classList.remove('active', 'custom-active')
+  );
+  pill.classList.add(mode === 'custom' ? 'custom-active' : 'active');
+  // Show/hide custom date pickers
+  const cr = document.getElementById('journal-custom-range');
+  if (cr) cr.style.display = mode === 'custom' ? 'flex' : 'none';
+  _renderJournalEntries();
+}
+
 // ✅ Expose all functions called from inline HTML attributes
 // Required because type="module" creates a closed scope
 Object.assign(window, {
@@ -3736,7 +4118,7 @@ Object.assign(window, {
   // Modals
   closeModal, openModal,
   // Passcode
-  pcPress, pcCancel, requirePasscode, changePasscode,
+  pcPress, pcCancel, requirePasscode, changePasscode, pcKeyboardInput,
   // Categories
   openCategoryModal, saveCategory, deleteCategory, selectColor, inlineAddCat, inlineAddHabitCat,
   // Tasks
@@ -3757,6 +4139,9 @@ Object.assign(window, {
   exportCSV, importCSV, confirmReset,
   // Stage notes
   openStageNote, saveStageNote,
+  // Journal
+  renderJournal, saveJournalEntry, editJournalEntry, deleteJournalEntry,
+  selectMood, addJournalTag, removeJournalTag, setJournalView, updateJournalWordCount,
 });
 
 // ============================================================
